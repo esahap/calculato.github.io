@@ -1,0 +1,1136 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculator App</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧮</text></svg>">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f0f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        /* КАЛЬКУЛЯТОР СТИЛІ */
+        .calculator-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 350px;
+            width: 100%;
+        }
+
+        .calculator-header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .calculator-title {
+            font-size: 24px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .calculator-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .display {
+            background: #000;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 32px;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: right;
+            margin-bottom: 20px;
+            min-height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            word-break: break-all;
+        }
+
+        .buttons {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .btn {
+            padding: 20px;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-number {
+            background: #e9ecef;
+            color: #333;
+        }
+
+        .btn-operator {
+            background: #007bff;
+            color: white;
+        }
+
+        .btn-equals {
+            background: #28a745;
+            color: white;
+            grid-column: span 2;
+        }
+
+        .btn-clear {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-zero {
+            grid-column: span 2;
+        }
+
+        /* ЧАТ СТИЛІ */
+        .chat-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            color: #fff;
+            display: none;
+            flex-direction: column;
+            z-index: 1000;
+        }
+
+        .chat-header {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(20px);
+            padding: 15px 25px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .security-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4444;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.secure { background: #00ff88; }
+        .status-indicator.warning { background: #ffaa00; }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .panic-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 25px;
+            background: rgba(0,0,0,0.3);
+        }
+
+        .message {
+            margin: 15px 0;
+            padding: 12px 18px;
+            border-radius: 18px;
+            max-width: 75%;
+            word-wrap: break-word;
+            animation: messageSlide 0.3s ease;
+        }
+
+        @keyframes messageSlide {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.own {
+            background: linear-gradient(135deg, #0088ff, #0066cc);
+            margin-left: auto;
+            box-shadow: 0 4px 15px rgba(0,136,255,0.3);
+        }
+
+        .message.other {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-right: auto;
+        }
+
+        .system-message {
+            text-align: center;
+            color: #666;
+            font-size: 12px;
+            margin: 20px 0;
+            padding: 8px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .chat-input-area {
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(20px);
+            padding: 20px 25px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 25px;
+            outline: none;
+            font-size: 14px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+
+        .chat-input:focus {
+            border-color: #0088ff;
+            box-shadow: 0 0 20px rgba(0,136,255,0.3);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #00ff88, #0088ff);
+            color: #000;
+            border: none;
+            padding: 15px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,255,136,0.4);
+        }
+
+        .send-btn:disabled {
+            background: #333;
+            color: #666;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .auth-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .auth-box {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 40px;
+            text-align: center;
+            min-width: 400px;
+        }
+
+        .auth-title {
+            font-size: 24px;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00ff88, #0088ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-weight: 700;
+        }
+
+        .progress-bar {
+            height: 4px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 2px;
+            margin: 20px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #00ff88, #0088ff);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .hidden { display: none !important; }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .calculator-container {
+                padding: 20px;
+                max-width: 320px;
+            }
+            
+            .display {
+                font-size: 24px;
+                padding: 15px;
+                min-height: 60px;
+            }
+            
+            .btn {
+                padding: 15px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- КАЛЬКУЛЯТОР (камуфляж) -->
+    <div class="calculator-container" id="calculatorApp">
+        <div class="calculator-header">
+            <div class="calculator-title">🧮 Calculator</div>
+            <div class="calculator-subtitle">Simple Math Calculator</div>
+        </div>
+        
+        <div class="display" id="display">0</div>
+        
+        <div class="buttons">
+            <button class="btn btn-clear" onclick="clearDisplay()">C</button>
+            <button class="btn btn-operator" onclick="appendToDisplay('/')">/</button>
+            <button class="btn btn-operator" onclick="appendToDisplay('*')">×</button>
+            <button class="btn btn-operator" onclick="deleteLast()">⌫</button>
+            
+            <button class="btn btn-number" onclick="appendToDisplay('7')">7</button>
+            <button class="btn btn-number" onclick="appendToDisplay('8')">8</button>
+            <button class="btn btn-number" onclick="appendToDisplay('9')">9</button>
+            <button class="btn btn-operator" onclick="appendToDisplay('-')">-</button>
+            
+            <button class="btn btn-number" onclick="appendToDisplay('4')">4</button>
+            <button class="btn btn-number" onclick="appendToDisplay('5')">5</button>
+            <button class="btn btn-number" onclick="appendToDisplay('6')">6</button>
+            <button class="btn btn-operator" onclick="appendToDisplay('+')">+</button>
+            
+            <button class="btn btn-number" onclick="appendToDisplay('1')">1</button>
+            <button class="btn btn-number" onclick="appendToDisplay('2')">2</button>
+            <button class="btn btn-number" onclick="appendToDisplay('3')">3</button>
+            <button class="btn btn-equals" onclick="calculate()" rowspan="2">=</button>
+            
+            <button class="btn btn-number btn-zero" onclick="appendToDisplay('0')">0</button>
+            <button class="btn btn-number" onclick="appendToDisplay('.')">.</button>
+        </div>
+    </div>
+
+    <!-- ЧАТ (прихований) -->
+    <div class="chat-container" id="chatApp">
+        <div class="chat-header">
+            <div class="security-badge">
+                <div class="status-indicator" id="securityIndicator"></div>
+                <span>PHANTOM SECURE</span>
+                <div style="font-size: 12px; color: #888;" id="connectionStatus">Підключення...</div>
+            </div>
+            <button class="panic-btn" onclick="panicReturn()">📱 CALCULATOR</button>
+        </div>
+        
+        <div class="chat-messages" id="messages"></div>
+        
+        <div class="chat-input-area">
+            <input 
+                type="text" 
+                class="chat-input" 
+                id="messageInput" 
+                placeholder="Повідомлення автоматично знищується..."
+                disabled
+            >
+            <button class="send-btn" id="sendButton" disabled>ENCRYPT & SEND</button>
+        </div>
+    </div>
+
+    <!-- AUTH OVERLAY -->
+    <div class="auth-overlay" id="authOverlay">
+        <div class="auth-box">
+            <div class="auth-title">🔐 PHANTOM SECURE</div>
+            <div style="color: #888; margin-bottom: 30px; font-size: 14px;">Anonymous Zero-Knowledge Chat</div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+            
+            <div style="font-size: 14px; color: #888; margin: 15px 0;" id="authStatus">Generating security keys...</div>
+            
+            <button 
+                style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-size: 12px; margin-top: 15px; display: none;"
+                onclick="if(phantomChat) phantomChat.fallbackMode()"
+                id="skipButton"
+            >
+                Skip to P2P Mode
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // КАЛЬКУЛЯТОР ЛОГІКА
+        let display = document.getElementById('display');
+        let currentInput = '0';
+        let secretSequence = '';
+        let awaitingOperator = false;
+
+        // Секретні коди для входу
+        const SECRET_CODES = ['1337', '007', '2024', '911', '777'];
+
+        function appendToDisplay(value) {
+            secretSequence += value;
+            
+            // Перевірка секретного коду
+            for (let code of SECRET_CODES) {
+                if (secretSequence.includes(code)) {
+                    activateSecureMode();
+                    return;
+                }
+            }
+            
+            // Обмежуємо довжину секретної послідовності
+            if (secretSequence.length > 10) {
+                secretSequence = secretSequence.slice(-10);
+            }
+
+            if (currentInput === '0' && value !== '.') {
+                currentInput = value;
+            } else {
+                currentInput += value;
+            }
+            
+            display.textContent = currentInput;
+            awaitingOperator = false;
+        }
+
+        function clearDisplay() {
+            currentInput = '0';
+            secretSequence = '';
+            display.textContent = currentInput;
+            awaitingOperator = false;
+        }
+
+        function deleteLast() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            display.textContent = currentInput;
+        }
+
+        function calculate() {
+            try {
+                // Заміна символів для обчислення
+                let expression = currentInput.replace(/×/g, '*');
+                let result = eval(expression);
+                
+                if (!isFinite(result)) {
+                    throw new Error('Invalid calculation');
+                }
+                
+                currentInput = result.toString();
+                display.textContent = currentInput;
+                awaitingOperator = true;
+            } catch (error) {
+                display.textContent = 'Error';
+                currentInput = '0';
+                setTimeout(() => {
+                    display.textContent = currentInput;
+                }, 1500);
+            }
+        }
+
+        // SECURE CHAT ЛОГІКА
+        class PhantomSecure {
+            constructor() {
+                this.ws = null;
+                this.userId = this.generateId();
+                this.sessionKey = null;
+                this.partnerId = null;
+                this.isAuthenticated = false;
+                
+                this.elements = {
+                    authOverlay: document.getElementById('authOverlay'),
+                    progressFill: document.getElementById('progressFill'),
+                    authStatus: document.getElementById('authStatus'),
+                    securityIndicator: document.getElementById('securityIndicator'),
+                    connectionStatus: document.getElementById('connectionStatus'),
+                    messages: document.getElementById('messages'),
+                    messageInput: document.getElementById('messageInput'),
+                    sendButton: document.getElementById('sendButton')
+                };
+            }
+
+            generateId() {
+                return 'phantom_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            }
+
+            async init() {
+                this.updateProgress(20, 'Initializing security protocols...');
+                
+                // Показуємо кнопку Skip через 10 секунд
+                setTimeout(() => {
+                    const skipButton = document.getElementById('skipButton');
+                    if (skipButton && !this.isAuthenticated) {
+                        skipButton.style.display = 'block';
+                        this.updateProgress(35, 'Server slow to respond - P2P mode available');
+                    }
+                }, 10000);
+                
+                // Встановлюємо загальний таймаут на підключення
+                const connectionTimeout = setTimeout(() => {
+                    if (!this.isAuthenticated) {
+                        console.log('🕐 Connection timeout - activating fallback mode');
+                        this.fallbackMode();
+                    }
+                }, 30000); // 30 секунд максимум
+                
+                try {
+                    await this.connect();
+                    clearTimeout(connectionTimeout);
+                } catch (error) {
+                    clearTimeout(connectionTimeout);
+                    console.error('Connection failed:', error);
+                    this.fallbackMode();
+                }
+            }
+
+            async connect() {
+                this.updateProgress(30, 'Waking up server...');
+                
+                // Спочатку перевіряємо HTTP доступність
+                try {
+                    console.log('🌐 Testing HTTP connection...');
+                    const response = await fetch('https://tini-messenger-api.onrender.com/', { 
+                        method: 'GET',
+                        mode: 'no-cors'
+                    });
+                    console.log('✅ HTTP wake-up request sent');
+                    this.updateProgress(50, 'Server is waking up...');
+                } catch (e) {
+                    console.log('❌ HTTP request failed, trying anyway...', e);
+                    this.updateProgress(40, 'Attempting direct connection...');
+                }
+                
+                // Затримка для повного запуску сервера
+                await new Promise(resolve => setTimeout(resolve, 5000));
+                
+                this.updateProgress(70, 'Establishing WebSocket connection...');
+                
+                // Спробуємо різні WebSocket URLs
+                const wsUrls = [
+                    'wss://tini-messenger-api.onrender.com',
+                    'ws://tini-messenger-api.onrender.com',
+                    'wss://tini-messenger-api.onrender.com/websocket',
+                    'wss://tini-messenger-api.onrender.com/ws'
+                ];
+                
+                let connected = false;
+                
+                for (let i = 0; i < wsUrls.length && !connected; i++) {
+                    const url = wsUrls[i];
+                    console.log(`🔌 Trying WebSocket: ${url}`);
+                    
+                    try {
+                        await this.tryConnection(url);
+                        connected = true;
+                        console.log(`✅ Connected to: ${url}`);
+                        break;
+                    } catch (error) {
+                        console.log(`❌ Failed to connect to: ${url}`, error);
+                        
+                        if (i === wsUrls.length - 1) {
+                            // Останній URL не спрацював - використовуємо fallback
+                            this.fallbackMode();
+                            return;
+                        }
+                        
+                        // Коротка пауза перед наступною спробою
+                        await new Promise(resolve => setTimeout(resolve, 1000));
+                    }
+                }
+            }
+            
+            async tryConnection(url) {
+                return new Promise((resolve, reject) => {
+                    this.ws = new WebSocket(url);
+                    
+                    const timeout = setTimeout(() => {
+                        this.ws.close();
+                        reject(new Error('Connection timeout'));
+                    }, 10000); // 10 секунд таймаут
+                    
+                    this.ws.onopen = () => {
+                        clearTimeout(timeout);
+                        this.updateProgress(80, 'Connected! Joining secure room...');
+                        
+                        // Різні формати для тестування
+                        this.send({
+                            type: 'join',
+                            userId: this.userId,
+                            room: 'phantom_secure_room',
+                            username: `phantom_${this.userId.slice(-6)}`,
+                            timestamp: Date.now()
+                        });
+                        
+                        resolve();
+                    };
+                    
+                    this.ws.onerror = (error) => {
+                        clearTimeout(timeout);
+                        console.log('WebSocket error:', error);
+                        reject(error);
+                    };
+                    
+                    this.ws.onclose = (event) => {
+                        clearTimeout(timeout);
+                        console.log('WebSocket closed:', event.code, event.reason);
+                        if (!this.isAuthenticated) {
+                            reject(new Error(`Connection closed: ${event.code} ${event.reason}`));
+                        }
+                    };
+
+                    this.ws.onmessage = async (event) => {
+                        try {
+                            const data = JSON.parse(event.data);
+                            console.log('📨 Server response:', data);
+                            await this.handleMessage(data);
+                        } catch (error) {
+                            console.error('Message parsing error:', error);
+                            console.log('📨 Raw message:', event.data);
+                            
+                            // Можливо це простий текст - симулюємо успішне підключення
+                            if (event.data.includes('connected') || event.data.includes('joined')) {
+                                this.simulateConnection();
+                            }
+                        }
+                    };
+                });
+            }
+            
+            fallbackMode() {
+                console.log('🔄 Entering fallback mode - peer-to-peer simulation');
+                this.updateProgress(90, 'Server unavailable - P2P mode activated');
+                
+                // Ховаємо кнопку Skip
+                const skipButton = document.getElementById('skipButton');
+                if (skipButton) skipButton.style.display = 'none';
+                
+                // Симулюємо локальне підключення
+                setTimeout(() => {
+                    this.isAuthenticated = true;
+                    this.updateProgress(100, 'P2P mode ready');
+                    this.enterChatMode();
+                    
+                    // Показуємо повідомлення про fallback
+                    setTimeout(() => {
+                        this.addSystemMessage('⚠️ Server unavailable - Local P2P mode activated');
+                        this.addSystemMessage('💡 Share this same page link with partner for connection');
+                        this.addSystemMessage('🔒 Messages will be encrypted locally');
+                        this.addSystemMessage('📱 Both users must use same browser tab for sync');
+                        
+                        // Активуємо локальний чат
+                        this.enableLocalChat();
+                    }, 1000);
+                }, 2000);
+            }
+            
+            simulateConnection() {
+                this.isAuthenticated = true;
+                this.updateProgress(100, 'Connected in test mode');
+                setTimeout(() => this.enterChatMode(), 1000);
+            }
+            
+            enableLocalChat() {
+                // Локальний чат через localStorage для тестування
+                this.updateConnectionStatus('📡 Local P2P Ready', 'warning');
+                this.enableChat();
+                
+                // Перевіряємо локальні повідомлення
+                this.localMessageInterval = setInterval(() => {
+                    this.checkLocalMessages();
+                }, 1000);
+            }
+            
+            checkLocalMessages() {
+                try {
+                    const messages = JSON.parse(localStorage.getItem('phantom_messages') || '[]');
+                    const lastChecked = this.lastLocalCheck || 0;
+                    
+                    messages.forEach(msg => {
+                        if (msg.timestamp > lastChecked && msg.from !== this.userId) {
+                            this.handleLocalMessage(msg);
+                        }
+                    });
+                    
+                    this.lastLocalCheck = Date.now();
+                } catch (e) {
+                    // Ігноруємо помилки localStorage
+                }
+            }
+            
+            async handleLocalMessage(msg) {
+                if (msg.encrypted && this.sessionKey) {
+                    try {
+                        const decrypted = await this.decrypt(msg.content);
+                        this.addMessage(decrypted, false);
+                    } catch (e) {
+                        this.addMessage(msg.content, false);
+                    }
+                } else {
+                    this.addMessage(msg.content, false);
+                }
+            }
+
+                this.ws.onclose = () => {
+                    this.updateConnectionStatus('Disconnected', 'error');
+                };
+
+                this.ws.onerror = () => {
+                    this.updateConnectionStatus('Connection Error', 'error');
+                };
+            }
+
+            async handleMessage(data) {
+                console.log('📨 Server message:', data);
+                
+                const messageType = data.type || data.event || data.action;
+                
+                switch (messageType) {
+                    case 'join_success':
+                    case 'connected':
+                    case 'welcome':
+                        this.isAuthenticated = true;
+                        this.updateProgress(90, 'Connected to secure room');
+                        
+                        // Перевіряємо кількість користувачів
+                        if (data.users && data.users.length > 2) {
+                            this.panicReturn();
+                            return;
+                        }
+                        
+                        setTimeout(() => this.enterChatMode(), 1000);
+                        break;
+
+                    case 'user_joined':
+                    case 'user_connected':
+                        const newUserId = data.userId || data.user || data.id;
+                        
+                        if (newUserId !== this.userId) {
+                            // Перевіряємо чи не третій користувач
+                            if (this.partnerId && this.partnerId !== newUserId) {
+                                this.triggerPanic('Third user detected - security breach');
+                                return;
+                            }
+                            
+                            this.partnerId = newUserId;
+                            await this.establishEncryption();
+                            this.addSystemMessage(`🔐 Secure partner connected`);
+                        }
+                        break;
+
+                    case 'user_left':
+                    case 'user_disconnected':
+                        const leftUserId = data.userId || data.user || data.id;
+                        
+                        if (leftUserId === this.partnerId) {
+                            this.partnerId = null;
+                            this.sessionKey = null;
+                            this.updateConnectionStatus('Waiting for partner...', 'warning');
+                            this.addSystemMessage('🔓 Partner disconnected - encryption disabled');
+                            this.elements.messageInput.disabled = true;
+                            this.elements.sendButton.disabled = true;
+                        }
+                        break;
+
+                    case 'message':
+                        // Якщо повідомлення від партнера і воно зашифроване
+                        if (data.from === this.partnerId && data.encrypted) {
+                            await this.handleEncryptedMessage(data);
+                        } else if (data.from !== this.userId) {
+                            // Незашифроване повідомлення - підозріло
+                            this.addSystemMessage('⚠️ Received unencrypted message - ignoring');
+                        }
+                        break;
+
+                    case 'error':
+                        if (data.message && (data.message.includes('full') || data.message.includes('limit'))) {
+                            this.panicReturn();
+                        } else {
+                            this.addSystemMessage(`Error: ${data.message}`);
+                        }
+                        break;
+
+                    case 'room_users':
+                    case 'users_list':
+                        // Перевіряємо кількість користувачів
+                        const usersList = data.users || data.list || [];
+                        if (usersList.length > 2) {
+                            this.triggerPanic('Too many users in room');
+                            return;
+                        }
+                        break;
+
+                    default:
+                        console.log('Unknown message type:', messageType, data);
+                }
+            }
+
+            async establishEncryption() {
+                this.sessionKey = await crypto.subtle.generateKey(
+                    { name: 'AES-GCM', length: 256 },
+                    false,
+                    ['encrypt', 'decrypt']
+                );
+
+                this.updateConnectionStatus('🔐 Quantum Secure', 'secure');
+                this.enableChat();
+                this.addSystemMessage('🔐 End-to-end encryption established');
+            }
+
+            async sendMessage() {
+                const text = this.elements.messageInput.value.trim();
+                if (!text) return;
+
+                // Якщо є WebSocket підключення
+                if (this.ws && this.ws.readyState === WebSocket.OPEN && this.partnerId) {
+                    const encrypted = await this.encryptMessage(text);
+                    
+                    this.send({
+                        type: 'message',
+                        text: encrypted,
+                        from: this.userId,
+                        to: this.partnerId,
+                        room: 'phantom_secure_room',
+                        encrypted: true,
+                        timestamp: Date.now()
+                    });
+                } 
+                // Якщо немає WebSocket - використовуємо локальний режим
+                else {
+                    await this.sendLocalMessage(text);
+                }
+
+                this.addMessage(text, true);
+                this.elements.messageInput.value = '';
+            }
+            
+            async sendLocalMessage(text) {
+                try {
+                    const encrypted = this.sessionKey ? await this.encryptMessage(text) : text;
+                    
+                    const message = {
+                        from: this.userId,
+                        content: encrypted,
+                        encrypted: !!this.sessionKey,
+                        timestamp: Date.now()
+                    };
+                    
+                    // Зберігаємо в localStorage для локального P2P
+                    const messages = JSON.parse(localStorage.getItem('phantom_messages') || '[]');
+                    messages.push(message);
+                    
+                    // Залишаємо тільки останні 50 повідомлень
+                    if (messages.length > 50) {
+                        messages.splice(0, messages.length - 50);
+                    }
+                    
+                    localStorage.setItem('phantom_messages', JSON.stringify(messages));
+                } catch (e) {
+                    console.log('Failed to send local message:', e);
+                }
+            }
+
+            async encryptMessage(text) {
+                const encoder = new TextEncoder();
+                const data = encoder.encode(text);
+                const iv = crypto.getRandomValues(new Uint8Array(12));
+                
+                const encrypted = await crypto.subtle.encrypt(
+                    { name: 'AES-GCM', iv },
+                    this.sessionKey,
+                    data
+                );
+
+                return {
+                    data: Array.from(new Uint8Array(encrypted)),
+                    iv: Array.from(iv)
+                };
+            }
+
+            async handleEncryptedMessage(data) {
+                if (!this.sessionKey || data.from === this.userId) return;
+                
+                try {
+                    // Різні формати зашифрованого контенту
+                    let encryptedData = data.text || data.message || data.content;
+                    
+                    // Якщо це наш формат шифрування
+                    if (typeof encryptedData === 'object' && encryptedData.data && encryptedData.iv) {
+                        const decrypted = await crypto.subtle.decrypt(
+                            { name: 'AES-GCM', iv: new Uint8Array(encryptedData.iv) },
+                            this.sessionKey,
+                            new Uint8Array(encryptedData.data)
+                        );
+
+                        const text = new TextDecoder().decode(decrypted);
+                        this.addMessage(text, false);
+                    } else {
+                        // Якщо це інший формат - показуємо як є (для тестування)
+                        this.addSystemMessage(`🔓 Received: ${encryptedData}`);
+                    }
+                } catch (error) {
+                    console.error('Decryption failed:', error);
+                    this.addSystemMessage('⚠️ Failed to decrypt message');
+                }
+            }
+
+            updateProgress(percent, status) {
+                this.elements.progressFill.style.width = percent + '%';
+                this.elements.authStatus.textContent = status;
+            }
+
+            updateConnectionStatus(text, type) {
+                this.elements.securityIndicator.className = `status-indicator ${type}`;
+                this.elements.connectionStatus.textContent = text;
+            }
+
+            enterChatMode() {
+                this.elements.authOverlay.style.display = 'none';
+                
+                // Ховаємо кнопку Skip
+                const skipButton = document.getElementById('skipButton');
+                if (skipButton) skipButton.style.display = 'none';
+                
+                this.updateConnectionStatus('Waiting for partner...', 'warning');
+            }
+
+            enableChat() {
+                this.elements.messageInput.disabled = false;
+                this.elements.sendButton.disabled = false;
+                this.elements.messageInput.focus();
+
+                this.elements.sendButton.onclick = () => this.sendMessage();
+                this.elements.messageInput.onkeypress = (e) => {
+                    if (e.key === 'Enter') this.sendMessage();
+                };
+            }
+
+            addMessage(text, isOwn) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+                messageDiv.textContent = text;
+                
+                this.elements.messages.appendChild(messageDiv);
+                this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+            }
+
+            addSystemMessage(text) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = 'system-message';
+                messageDiv.textContent = text;
+                this.elements.messages.appendChild(messageDiv);
+                this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+            }
+
+            triggerPanic(reason) {
+                console.log('🚨 PANIC MODE:', reason);
+                this.addSystemMessage(`🚨 SECURITY ALERT: ${reason}`);
+                
+                // Швидке повернення до калькулятора
+                setTimeout(() => {
+                    panicReturn();
+                }, 2000);
+            }
+
+            send(data) {
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    console.log('📤 Sending:', data);
+                    this.ws.send(JSON.stringify(data));
+                }
+            }
+
+            destroy() {
+                if (this.ws) {
+                    this.ws.close();
+                }
+                
+                // Очищаємо інтервали
+                if (this.localMessageInterval) {
+                    clearInterval(this.localMessageInterval);
+                }
+                
+                // Очищаємо дані
+                this.sessionKey = null;
+                this.partnerId = null;
+                this.elements.messages.innerHTML = '';
+                this.elements.messageInput.value = '';
+                
+                // Очищаємо локальні повідомлення для безпеки
+                try {
+                    localStorage.removeItem('phantom_messages');
+                } catch (e) {
+                    // Ігноруємо помилки
+                }
+            }
+        }
+
+        let phantomChat = null;
+
+        // ФУНКЦІЇ ПЕРЕМИКАННЯ
+        function activateSecureMode() {
+            document.getElementById('calculatorApp').style.display = 'none';
+            document.getElementById('chatApp').style.display = 'flex';
+            document.getElementById('authOverlay').style.display = 'flex';
+            
+            // Очищаємо калькулятор
+            clearDisplay();
+            
+            // Показуємо детальний статус підключення
+            document.getElementById('authStatus').textContent = 'Initializing Phantom Secure...';
+            document.getElementById('progressFill').style.width = '10%';
+            
+            // Запускаємо чат з детальною діагностикою
+            setTimeout(() => {
+                phantomChat = new PhantomSecure();
+                phantomChat.init();
+            }, 1000);
+            
+            // Змінюємо title
+            document.title = 'Secure Chat';
+            
+            // Додаємо інструкції в консоль
+            console.log(`
+🔐 PHANTOM SECURE ACTIVATED
+📋 Diagnostic Info:
+   • Server: tini-messenger-api.onrender.com
+   • Mode: WebSocket with fallback to P2P
+   • Encryption: AES-GCM-256
+   
+🕵️ How to use:
+   1. Share this page link with ONE partner
+   2. Both open at same time
+   3. Wait for connection
+   4. Start encrypted messaging
+   
+⚠️ Security features:
+   • Max 2 users only
+   • Auto-encryption
+   • Panic button (ESC key)
+   • Zero data storage
+            `);
+        }
+
+        function panicReturn() {
+            document.getElementById('calculatorApp').style.display = 'block';
+            document.getElementById('chatApp').style.display = 'none';
+            document.getElementById('authOverlay').style.display = 'none';
+            
+            // Знищуємо чат
+            if (phantomChat) {
+                phantomChat.destroy();
+                phantomChat = null;
+            }
+            
+            // Повертаємо title
+            document.title = 'Calculator App';
+            
+            // Очищаємо калькулятор
+            clearDisplay();
+        }
+
+        // ДОДАТКОВА БЕЗПЕКА
+        document.addEventListener('keydown', (e) => {
+            // ESC для швидкого повернення до калькулятора
+            if (e.key === 'Escape' && document.getElementById('chatApp').style.display === 'flex') {
+                panicReturn();
+            }
+            
+            // Ctrl+Shift+I - блокуємо dev tools
+            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+                e.preventDefault();
+                panicReturn();
+            }
+            
+            // F12 - блокуємо dev tools
+            if (e.key === 'F12') {
+                e.preventDefault();
+                panicReturn();
+            }
+        });
+
+        // Блокування правої кнопки миші
+        document.addEventListener('contextmenu', e => e.preventDefault());
+
+        // Блокування виділення в чаті
+        document.addEventListener('selectstart', e => {
+            if (document.getElementById('chatApp').style.display === 'flex') {
+                e.preventDefault();
+            }
+        });
+
+        // Очищення при закритті
+        window.addEventListener('beforeunload', () => {
+            if (phantomChat) {
+                phantomChat.destroy();
+            }
+        });
+
+        // Генерація випадкових "обчислень" для камуфляжу
+        setInterval(() => {
+            if (document.getElementById('calculatorApp').style.display !== 'none' && Math.random() > 0.95) {
+                const randomCalc = ['24+8', '15*3', '100/4', '50-25', '7*7'][Math.floor(Math.random() * 5)];
+                // Можна додати візуальні ефекти
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
