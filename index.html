@@ -744,9 +744,8 @@
             }
             
             generateRoomId() {
-                // Створюємо унікальний ID кімнати на основі часу (5-хвилинні вікна)
-                return 'room_' + Math.floor(Date.now() / 300000);
-            }
+        return 'phantom_room_001'; // Статична кімната
+    }
             
             init() {
                 if (this.useBroadcast) {
@@ -1083,19 +1082,17 @@
             }
 
             generateVerificationCode() {
-                // Код базується на fingerprint та часі
-                const timeWindow = Math.floor(Date.now() / 300000); // 5-хвилинні вікна
-                const combined = userFingerprint + timeWindow.toString();
-                
-                let hash = 0;
-                for (let i = 0; i < combined.length; i++) {
-                    const char = combined.charCodeAt(i);
-                    hash = ((hash << 5) - hash) + char;
-                    hash = hash & hash; // Convert to 32bit integer
-                }
-                
-                return Math.abs(hash).toString().slice(-6);
-            }
+        const timeWindow = Math.floor(Date.now() / 300000); // 5-хвилинне вікно
+        const sharedSecret = 'phantom_room_key'; // фіксований секрет
+        const combined = sharedSecret + timeWindow.toString();
+        let hash = 0;
+        for (let i = 0; i < combined.length; i++) {
+            const char = combined.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash;
+        }
+        return Math.abs(hash).toString().padStart(6, '0').slice(0, 6);
+    }
 
             showVerificationChallenge(code) {
                 this.elements.verificationInput.classList.remove('hidden');
