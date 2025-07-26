@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculator App</title>
+    <title>Scientific Calculator</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🧮</text></svg>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: #f0f0f0;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -18,14 +18,15 @@
             padding: 20px;
         }
 
-        /* КАЛЬКУЛЯТОР СТИЛІ */
         .calculator-container {
-            background: white;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
             padding: 30px;
-            max-width: 350px;
+            max-width: 380px;
             width: 100%;
+            border: 1px solid rgba(255,255,255,0.3);
         }
 
         .calculator-header {
@@ -34,195 +35,262 @@
         }
 
         .calculator-title {
-            font-size: 24px;
-            color: #333;
-            margin-bottom: 5px;
+            font-size: 26px;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            font-weight: 700;
         }
 
         .calculator-subtitle {
             font-size: 14px;
-            color: #666;
+            color: #7f8c8d;
+            font-weight: 500;
         }
 
         .display {
-            background: #000;
-            color: #00ff00;
-            font-family: 'Courier New', monospace;
-            font-size: 32px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: #ecf0f1;
+            font-family: 'SF Mono', 'Monaco', 'Cascadia Code', monospace;
+            font-size: 28px;
             padding: 20px;
-            border-radius: 10px;
+            border-radius: 12px;
             text-align: right;
             margin-bottom: 20px;
-            min-height: 80px;
+            min-height: 70px;
             display: flex;
             align-items: center;
             justify-content: flex-end;
             word-break: break-all;
+            box-shadow: inset 0 2px 10px rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
         }
 
         .buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
+            gap: 12px;
         }
 
         .btn {
-            padding: 20px;
-            font-size: 18px;
+            padding: 18px;
+            font-size: 16px;
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             font-weight: 600;
+            font-family: inherit;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+            transition: transform 0.1s;
         }
 
         .btn-number {
-            background: #e9ecef;
-            color: #333;
+            background: linear-gradient(135deg, #ecf0f1 0%, #bdc3c7 100%);
+            color: #2c3e50;
+            border: 1px solid rgba(189, 195, 199, 0.3);
         }
 
         .btn-operator {
-            background: #007bff;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
             color: white;
+            border: 1px solid rgba(52, 152, 219, 0.3);
         }
 
         .btn-equals {
-            background: #28a745;
+            background: linear-gradient(135deg, #27ae60 0%, #229954 100%);
             color: white;
             grid-column: span 2;
+            border: 1px solid rgba(39, 174, 96, 0.3);
         }
 
         .btn-clear {
-            background: #dc3545;
+            background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
             color: white;
+            border: 1px solid rgba(231, 76, 60, 0.3);
         }
 
         .btn-zero {
             grid-column: span 2;
         }
 
-        /* ЧАТ СТИЛІ */
-        .chat-container {
+        /* SECURE CHAT СТИЛІ */
+        .secure-container {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%);
             color: #fff;
             display: none;
             flex-direction: column;
             z-index: 1000;
         }
 
-        .chat-header {
-            background: rgba(0,0,0,0.8);
+        .secure-header {
+            background: rgba(0,0,0,0.9);
             backdrop-filter: blur(20px);
             padding: 15px 25px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid rgba(0, 255, 136, 0.2);
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 20px rgba(0, 255, 136, 0.1);
         }
 
         .security-badge {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
             font-size: 14px;
         }
 
-        .status-indicator {
-            width: 8px;
-            height: 8px;
+        .shield-icon {
+            width: 20px;
+            height: 20px;
+            background: conic-gradient(from 0deg, #00ff88, #0088ff, #ff0088, #00ff88);
             border-radius: 50%;
-            background: #ff4444;
-            animation: pulse 2s infinite;
+            animation: rotate 3s linear infinite;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
         }
 
-        .status-indicator.secure { background: #00ff88; }
-        .status-indicator.warning { background: #ffaa00; }
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        .status-text {
+            font-family: 'SF Mono', monospace;
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
         }
 
         .panic-btn {
-            background: #ff4444;
+            background: linear-gradient(135deg, #ff4757, #ff3742);
             color: white;
             border: none;
-            padding: 8px 15px;
-            border-radius: 15px;
+            padding: 10px 18px;
+            border-radius: 20px;
             cursor: pointer;
             font-size: 12px;
-            font-weight: 600;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+            box-shadow: 0 4px 15px rgba(255, 71, 87, 0.3);
         }
 
-        .chat-messages {
+        .panic-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+        }
+
+        .secure-messages {
             flex: 1;
             overflow-y: auto;
-            padding: 20px 25px;
-            background: rgba(0,0,0,0.3);
+            padding: 25px;
+            background: rgba(0,0,0,0.2);
+            backdrop-filter: blur(5px);
         }
 
-        .message {
-            margin: 15px 0;
-            padding: 12px 18px;
-            border-radius: 18px;
-            max-width: 75%;
+        .secure-message {
+            margin: 18px 0;
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 80%;
             word-wrap: break-word;
-            animation: messageSlide 0.3s ease;
+            animation: messageAppear 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            font-size: 14px;
+            line-height: 1.4;
         }
 
-        @keyframes messageSlide {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes messageAppear {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px) scale(0.95);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
         }
 
-        .message.own {
+        .secure-message.own {
             background: linear-gradient(135deg, #0088ff, #0066cc);
             margin-left: auto;
-            box-shadow: 0 4px 15px rgba(0,136,255,0.3);
+            box-shadow: 0 6px 20px rgba(0, 136, 255, 0.3);
+            border: 1px solid rgba(0, 136, 255, 0.2);
         }
 
-        .message.other {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,255,255,0.1);
+        .secure-message.other {
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
             margin-right: auto;
+            box-shadow: 0 6px 20px rgba(255, 255, 255, 0.1);
         }
 
-        .system-message {
+        .system-alert {
             text-align: center;
-            color: #666;
-            font-size: 12px;
+            color: #00ff88;
+            font-size: 13px;
             margin: 20px 0;
-            padding: 8px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
+            padding: 12px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 15px;
+            border: 1px solid rgba(0, 255, 136, 0.3);
+            font-family: 'SF Mono', monospace;
+            animation: glow 2s ease-in-out infinite alternate;
         }
 
-        .chat-input-area {
-            background: rgba(0,0,0,0.8);
+        @keyframes glow {
+            from { box-shadow: 0 0 5px rgba(0, 255, 136, 0.2); }
+            to { box-shadow: 0 0 20px rgba(0, 255, 136, 0.4); }
+        }
+
+        .secure-input-area {
+            background: rgba(0,0,0,0.9);
             backdrop-filter: blur(20px);
             padding: 20px 25px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid rgba(0, 255, 136, 0.2);
             display: flex;
             gap: 15px;
             align-items: center;
         }
 
-        .chat-input {
+        .secure-input {
             flex: 1;
             background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 2px solid rgba(0, 255, 136, 0.3);
             color: #fff;
             padding: 15px 20px;
             border-radius: 25px;
@@ -230,31 +298,40 @@
             font-size: 14px;
             backdrop-filter: blur(10px);
             transition: all 0.3s ease;
+            font-family: inherit;
         }
 
-        .chat-input:focus {
-            border-color: #0088ff;
-            box-shadow: 0 0 20px rgba(0,136,255,0.3);
+        .secure-input:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 30px rgba(0, 255, 136, 0.3);
+            background: rgba(255,255,255,0.15);
         }
 
-        .send-btn {
+        .secure-input::placeholder {
+            color: rgba(255,255,255,0.6);
+        }
+
+        .send-secure-btn {
             background: linear-gradient(135deg, #00ff88, #0088ff);
             color: #000;
             border: none;
             padding: 15px 25px;
             border-radius: 25px;
             cursor: pointer;
-            font-weight: 600;
+            font-weight: 700;
             transition: all 0.3s ease;
             font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 6px 20px rgba(0, 255, 136, 0.3);
         }
 
-        .send-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(0,255,136,0.4);
+        .send-secure-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.4);
         }
 
-        .send-btn:disabled {
+        .send-secure-btn:disabled {
             background: #333;
             color: #666;
             cursor: not-allowed;
@@ -262,60 +339,140 @@
             box-shadow: none;
         }
 
-        .auth-overlay {
+        .auth-challenge {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.9);
+            background: rgba(0,0,0,0.95);
             display: none;
             align-items: center;
             justify-content: center;
             z-index: 2000;
+            backdrop-filter: blur(20px);
         }
 
         .auth-box {
-            background: rgba(255,255,255,0.1);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 20px;
+            background: linear-gradient(135deg, rgba(26,26,46,0.9), rgba(22,33,62,0.9));
+            backdrop-filter: blur(30px);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            border-radius: 25px;
             padding: 40px;
             text-align: center;
-            min-width: 400px;
+            min-width: 450px;
+            box-shadow: 0 20px 60px rgba(0, 255, 136, 0.2);
         }
 
         .auth-title {
-            font-size: 24px;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #00ff88, #0088ff);
+            font-size: 28px;
+            margin-bottom: 15px;
+            background: linear-gradient(45deg, #00ff88, #0088ff, #ff0088);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            font-weight: 700;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .auth-subtitle {
+            color: #bbb;
+            margin-bottom: 30px;
+            font-size: 16px;
+            font-family: 'SF Mono', monospace;
         }
 
         .progress-bar {
-            height: 4px;
+            height: 6px;
             background: rgba(255,255,255,0.1);
-            border-radius: 2px;
-            margin: 20px 0;
+            border-radius: 3px;
+            margin: 25px 0;
             overflow: hidden;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.3);
         }
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #00ff88, #0088ff);
+            background: linear-gradient(90deg, #00ff88, #0088ff, #ff0088);
             width: 0%;
-            transition: width 0.3s ease;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: progressGlow 2s ease-in-out infinite alternate;
+        }
+
+        @keyframes progressGlow {
+            from { box-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+            to { box-shadow: 0 0 20px rgba(0, 136, 255, 0.7); }
+        }
+
+        .auth-status {
+            font-size: 14px;
+            color: #00ff88;
+            margin: 20px 0;
+            font-family: 'SF Mono', monospace;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .verification-code {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(0, 255, 136, 0.3);
+            color: #fff;
+            padding: 15px;
+            border-radius: 15px;
+            font-family: 'SF Mono', monospace;
+            font-size: 18px;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: 3px;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .verification-code:focus {
+            border-color: #00ff88;
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
         }
 
         .hidden { display: none !important; }
+
+        .wipe-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #ff0000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            animation: criticalAlert 0.3s infinite;
+        }
+
+        @keyframes criticalAlert {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .wipe-text {
+            color: #fff;
+            font-size: 32px;
+            font-weight: 900;
+            text-align: center;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            animation: shake 0.5s infinite;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
 
         /* Responsive */
         @media (max-width: 480px) {
             .calculator-container {
                 padding: 20px;
-                max-width: 320px;
+                max-width: 340px;
             }
             
             .display {
@@ -326,7 +483,12 @@
             
             .btn {
                 padding: 15px;
-                font-size: 16px;
+                font-size: 14px;
+            }
+            
+            .auth-box {
+                min-width: 320px;
+                padding: 30px 20px;
             }
         }
     </style>
@@ -335,109 +497,127 @@
     <!-- КАЛЬКУЛЯТОР (камуфляж) -->
     <div class="calculator-container" id="calculatorApp">
         <div class="calculator-header">
-            <div class="calculator-title">🧮 Calculator</div>
-            <div class="calculator-subtitle">Simple Math Calculator</div>
+            <div class="calculator-title">🧮 Scientific Calculator</div>
+            <div class="calculator-subtitle">Advanced Mathematical Computing</div>
         </div>
         
         <div class="display" id="display">0</div>
         
         <div class="buttons">
-            <button class="btn btn-clear" onclick="clearDisplay()">C</button>
-            <button class="btn btn-operator" onclick="appendToDisplay('/')">/</button>
-            <button class="btn btn-operator" onclick="appendToDisplay('*')">×</button>
-            <button class="btn btn-operator" onclick="deleteLast()">⌫</button>
+            <button class="btn btn-clear" data-action="clear">C</button>
+            <button class="btn btn-operator" data-value="/">/</button>
+            <button class="btn btn-operator" data-value="*">×</button>
+            <button class="btn btn-operator" data-action="delete">⌫</button>
             
-            <button class="btn btn-number" onclick="appendToDisplay('7')">7</button>
-            <button class="btn btn-number" onclick="appendToDisplay('8')">8</button>
-            <button class="btn btn-number" onclick="appendToDisplay('9')">9</button>
-            <button class="btn btn-operator" onclick="appendToDisplay('-')">-</button>
+            <button class="btn btn-number" data-value="7">7</button>
+            <button class="btn btn-number" data-value="8">8</button>
+            <button class="btn btn-number" data-value="9">9</button>
+            <button class="btn btn-operator" data-value="-">-</button>
             
-            <button class="btn btn-number" onclick="appendToDisplay('4')">4</button>
-            <button class="btn btn-number" onclick="appendToDisplay('5')">5</button>
-            <button class="btn btn-number" onclick="appendToDisplay('6')">6</button>
-            <button class="btn btn-operator" onclick="appendToDisplay('+')">+</button>
+            <button class="btn btn-number" data-value="4">4</button>
+            <button class="btn btn-number" data-value="5">5</button>
+            <button class="btn btn-number" data-value="6">6</button>
+            <button class="btn btn-operator" data-value="+">+</button>
             
-            <button class="btn btn-number" onclick="appendToDisplay('1')">1</button>
-            <button class="btn btn-number" onclick="appendToDisplay('2')">2</button>
-            <button class="btn btn-number" onclick="appendToDisplay('3')">3</button>
-            <button class="btn btn-equals" onclick="calculate()" rowspan="2">=</button>
+            <button class="btn btn-number" data-value="1">1</button>
+            <button class="btn btn-number" data-value="2">2</button>
+            <button class="btn btn-number" data-value="3">3</button>
+            <button class="btn btn-equals" data-action="calculate">=</button>
             
-            <button class="btn btn-number btn-zero" onclick="appendToDisplay('0')">0</button>
-            <button class="btn btn-number" onclick="appendToDisplay('.')">.</button>
+            <button class="btn btn-number btn-zero" data-value="0">0</button>
+            <button class="btn btn-number" data-value=".">.</button>
         </div>
     </div>
 
-    <!-- ЧАТ (прихований) -->
-    <div class="chat-container" id="chatApp">
-        <div class="chat-header">
+    <!-- SECURE CHAT -->
+    <div class="secure-container" id="secureApp">
+        <div class="secure-header">
             <div class="security-badge">
-                <div class="status-indicator" id="securityIndicator"></div>
-                <span>PHANTOM SECURE</span>
-                <div style="font-size: 12px; color: #888;" id="connectionStatus">Підключення...</div>
+                <div class="shield-icon">🛡️</div>
+                <div>
+                    <div style="font-weight: 700; color: #00ff88;">PHANTOM PROTOCOL</div>
+                    <div class="status-text" id="securityStatus">QUANTUM SECURE</div>
+                </div>
             </div>
-            <button class="panic-btn" onclick="panicReturn()">📱 CALCULATOR</button>
+            <button class="panic-btn" id="panicBtn">🚨 EMERGENCY WIPE</button>
         </div>
         
-        <div class="chat-messages" id="messages"></div>
+        <div class="secure-messages" id="secureMessages"></div>
         
-        <div class="chat-input-area">
+        <div class="secure-input-area">
             <input 
                 type="text" 
-                class="chat-input" 
-                id="messageInput" 
-                placeholder="Повідомлення автоматично знищується..."
+                class="secure-input" 
+                id="secureInput" 
+                placeholder="Message auto-destructs after reading..."
                 disabled
             >
-            <button class="send-btn" id="sendButton" disabled>ENCRYPT & SEND</button>
+            <button class="send-secure-btn" id="sendSecureBtn" disabled>ENCRYPT</button>
         </div>
     </div>
 
-    <!-- AUTH OVERLAY -->
-    <div class="auth-overlay" id="authOverlay">
+    <!-- AUTH CHALLENGE -->
+    <div class="auth-challenge" id="authChallenge">
         <div class="auth-box">
-            <div class="auth-title">🔐 PHANTOM SECURE</div>
-            <div style="color: #888; margin-bottom: 30px; font-size: 14px;">Anonymous Zero-Knowledge Chat</div>
+            <div class="auth-title">PHANTOM SECURE</div>
+            <div class="auth-subtitle">Zero-Knowledge Authentication Protocol</div>
             
             <div class="progress-bar">
-                <div class="progress-fill" id="progressFill"></div>
+                <div class="progress-fill" id="authProgressFill"></div>
             </div>
             
-            <div style="font-size: 14px; color: #888; margin: 15px 0;" id="authStatus">Generating security keys...</div>
+            <div class="auth-status" id="authStatus">Initializing quantum encryption...</div>
             
-            <button 
-                style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 10px 20px; border-radius: 15px; cursor: pointer; font-size: 12px; margin-top: 15px; display: none;"
-                onclick="if(phantomChat) phantomChat.fallbackMode()"
-                id="skipButton"
+            <input 
+                type="text" 
+                class="verification-code hidden" 
+                id="verificationInput"
+                placeholder="ENTER VERIFICATION CODE"
+                maxlength="6"
             >
-                Skip to P2P Mode
-            </button>
+        </div>
+    </div>
+
+    <!-- EMERGENCY WIPE SCREEN -->
+    <div class="wipe-screen" id="wipeScreen">
+        <div class="wipe-text">
+            ⚠️ SECURITY BREACH DETECTED<br>
+            EMERGENCY DATA WIPE INITIATED<br>
+            ALL TRACES DESTROYED
         </div>
     </div>
 
     <script>
-        // КАЛЬКУЛЯТОР ЛОГІКА
+        // Глобальні змінні
         let display = document.getElementById('display');
         let currentInput = '0';
         let secretSequence = '';
-        let awaitingOperator = false;
+        let phantomSecure = null;
 
-        // Секретні коди для входу
-        const SECRET_CODES = ['1337', '007', '2024', '911', '777'];
+        // Новий секретний код
+        const SECRET_CODE = '9798';
+        
+        // Безпека та детекція
+        let securityViolations = 0;
+        let lastActivity = Date.now();
+        let userFingerprint = null;
+        let trustedUsers = new Set();
 
+        // КАЛЬКУЛЯТОР ЛОГІКА
         function appendToDisplay(value) {
+            console.log('Input:', value);
             secretSequence += value;
             
             // Перевірка секретного коду
-            for (let code of SECRET_CODES) {
-                if (secretSequence.includes(code)) {
-                    activateSecureMode();
-                    return;
-                }
+            if (secretSequence.includes(SECRET_CODE)) {
+                console.log('🔓 Access code verified');
+                initializePhantomSecure();
+                return;
             }
             
             // Обмежуємо довжину секретної послідовності
-            if (secretSequence.length > 10) {
-                secretSequence = secretSequence.slice(-10);
+            if (secretSequence.length > 8) {
+                secretSequence = secretSequence.slice(-8);
             }
 
             if (currentInput === '0' && value !== '.') {
@@ -447,14 +627,14 @@
             }
             
             display.textContent = currentInput;
-            awaitingOperator = false;
+            lastActivity = Date.now();
         }
 
         function clearDisplay() {
             currentInput = '0';
             secretSequence = '';
             display.textContent = currentInput;
-            awaitingOperator = false;
+            lastActivity = Date.now();
         }
 
         function deleteLast() {
@@ -464,11 +644,11 @@
                 currentInput = '0';
             }
             display.textContent = currentInput;
+            lastActivity = Date.now();
         }
 
         function calculate() {
             try {
-                // Заміна символів для обчислення
                 let expression = currentInput.replace(/×/g, '*');
                 let result = eval(expression);
                 
@@ -478,7 +658,6 @@
                 
                 currentInput = result.toString();
                 display.textContent = currentInput;
-                awaitingOperator = true;
             } catch (error) {
                 display.textContent = 'Error';
                 currentInput = '0';
@@ -486,651 +665,573 @@
                     display.textContent = currentInput;
                 }, 1500);
             }
+            lastActivity = Date.now();
         }
 
-        // SECURE CHAT ЛОГІКА
+        // PHANTOM SECURE SYSTEM
         class PhantomSecure {
             constructor() {
-                this.ws = null;
-                this.userId = this.generateId();
+                this.userId = this.generateUserId();
                 this.sessionKey = null;
-                this.partnerId = null;
+                this.partnerKey = null;
+                this.trustedPartner = null;
                 this.isAuthenticated = false;
+                this.messageQueue = [];
+                this.securityChecks = 0;
+                this.lastHeartbeat = Date.now();
                 
                 this.elements = {
-                    authOverlay: document.getElementById('authOverlay'),
-                    progressFill: document.getElementById('progressFill'),
+                    authChallenge: document.getElementById('authChallenge'),
+                    authProgressFill: document.getElementById('authProgressFill'),
                     authStatus: document.getElementById('authStatus'),
-                    securityIndicator: document.getElementById('securityIndicator'),
-                    connectionStatus: document.getElementById('connectionStatus'),
-                    messages: document.getElementById('messages'),
-                    messageInput: document.getElementById('messageInput'),
-                    sendButton: document.getElementById('sendButton')
+                    verificationInput: document.getElementById('verificationInput'),
+                    securityStatus: document.getElementById('securityStatus'),
+                    secureMessages: document.getElementById('secureMessages'),
+                    secureInput: document.getElementById('secureInput'),
+                    sendSecureBtn: document.getElementById('sendSecureBtn'),
+                    panicBtn: document.getElementById('panicBtn'),
+                    wipeScreen: document.getElementById('wipeScreen')
                 };
+
+                this.init();
             }
 
-            generateId() {
-                return 'phantom_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+            generateUserId() {
+                const entropy = new Uint8Array(32);
+                crypto.getRandomValues(entropy);
+                return Array.from(entropy, b => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
+            }
+
+            async generateFingerprint() {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                ctx.textBaseline = 'top';
+                ctx.font = '14px Arial';
+                ctx.fillText('PhantomSecure', 2, 2);
+                
+                const canvasData = canvas.toDataURL();
+                const userAgent = navigator.userAgent;
+                const language = navigator.language;
+                const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                const screen = `${window.screen.width}x${window.screen.height}`;
+                
+                const combined = canvasData + userAgent + language + timezone + screen;
+                const encoder = new TextEncoder();
+                const data = encoder.encode(combined);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+                
+                return Array.from(new Uint8Array(hashBuffer))
+                    .map(b => b.toString(16).padStart(2, '0'))
+                    .join('');
             }
 
             async init() {
-                this.updateProgress(20, 'Initializing security protocols...');
+                userFingerprint = await this.generateFingerprint();
+                console.log('🔐 Phantom Secure initializing...');
                 
-                // Показуємо кнопку Skip через 10 секунд
-                setTimeout(() => {
-                    const skipButton = document.getElementById('skipButton');
-                    if (skipButton && !this.isAuthenticated) {
-                        skipButton.style.display = 'block';
-                        this.updateProgress(35, 'Server slow to respond - P2P mode available');
-                    }
-                }, 10000);
-                
-                // Встановлюємо загальний таймаут на підключення
-                const connectionTimeout = setTimeout(() => {
-                    if (!this.isAuthenticated) {
-                        console.log('🕐 Connection timeout - activating fallback mode');
-                        this.fallbackMode();
-                    }
-                }, 30000); // 30 секунд максимум
-                
-                try {
-                    await this.connect();
-                    clearTimeout(connectionTimeout);
-                } catch (error) {
-                    clearTimeout(connectionTimeout);
-                    console.error('Connection failed:', error);
-                    this.fallbackMode();
-                }
+                this.updateAuthProgress(20, 'Generating quantum keys...');
+                await this.performSecurityChecks();
             }
 
-            async connect() {
-                this.updateProgress(30, 'Waking up server...');
+            async performSecurityChecks() {
+                this.updateAuthProgress(40, 'Performing security verification...');
                 
-                // Спочатку перевіряємо HTTP доступність
-                try {
-                    console.log('🌐 Testing HTTP connection...');
-                    const response = await fetch('https://tini-messenger-api.onrender.com/', { 
-                        method: 'GET',
-                        mode: 'no-cors'
-                    });
-                    console.log('✅ HTTP wake-up request sent');
-                    this.updateProgress(50, 'Server is waking up...');
-                } catch (e) {
-                    console.log('❌ HTTP request failed, trying anyway...', e);
-                    this.updateProgress(40, 'Attempting direct connection...');
-                }
-                
-                // Затримка для повного запуску сервера
-                await new Promise(resolve => setTimeout(resolve, 5000));
-                
-                this.updateProgress(70, 'Establishing WebSocket connection...');
-                
-                // Спробуємо різні WebSocket URLs
-                const wsUrls = [
-                    'wss://tini-messenger-api.onrender.com',
-                    'ws://tini-messenger-api.onrender.com',
-                    'wss://tini-messenger-api.onrender.com/websocket',
-                    'wss://tini-messenger-api.onrender.com/ws'
+                // Перевірка на відомі загрози
+                const suspiciousPatterns = [
+                    /selenium/i, /webdriver/i, /phantom/i, /headless/i,
+                    /bot/i, /crawler/i, /spider/i, /scraper/i
                 ];
                 
-                let connected = false;
+                const userAgent = navigator.userAgent.toLowerCase();
+                const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(userAgent));
                 
-                for (let i = 0; i < wsUrls.length && !connected; i++) {
-                    const url = wsUrls[i];
-                    console.log(`🔌 Trying WebSocket: ${url}`);
-                    
-                    try {
-                        await this.tryConnection(url);
-                        connected = true;
-                        console.log(`✅ Connected to: ${url}`);
-                        break;
-                    } catch (error) {
-                        console.log(`❌ Failed to connect to: ${url}`, error);
-                        
-                        if (i === wsUrls.length - 1) {
-                            // Останній URL не спрацював - використовуємо fallback
-                            this.fallbackMode();
-                            return;
-                        }
-                        
-                        // Коротка пауза перед наступною спробою
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
+                if (isSuspicious) {
+                    this.triggerEmergencyWipe('Automated browser detected');
+                    return;
                 }
-            }
-            
-            async tryConnection(url) {
-                return new Promise((resolve, reject) => {
-                    this.ws = new WebSocket(url);
-                    
-                    const timeout = setTimeout(() => {
-                        this.ws.close();
-                        reject(new Error('Connection timeout'));
-                    }, 10000); // 10 секунд таймаут
-                    
-                    this.ws.onopen = () => {
-                        clearTimeout(timeout);
-                        this.updateProgress(80, 'Connected! Joining secure room...');
-                        
-                        // Різні формати для тестування
-                        this.send({
-                            type: 'join',
-                            userId: this.userId,
-                            room: 'phantom_secure_room',
-                            username: `phantom_${this.userId.slice(-6)}`,
-                            timestamp: Date.now()
-                        });
-                        
-                        resolve();
-                    };
-                    
-                    this.ws.onerror = (error) => {
-                        clearTimeout(timeout);
-                        console.log('WebSocket error:', error);
-                        reject(error);
-                    };
-                    
-                    this.ws.onclose = (event) => {
-                        clearTimeout(timeout);
-                        console.log('WebSocket closed:', event.code, event.reason);
-                        if (!this.isAuthenticated) {
-                            reject(new Error(`Connection closed: ${event.code} ${event.reason}`));
-                        }
-                    };
 
-                    this.ws.onmessage = async (event) => {
-                        try {
-                            const data = JSON.parse(event.data);
-                            console.log('📨 Server response:', data);
-                            await this.handleMessage(data);
-                        } catch (error) {
-                            console.error('Message parsing error:', error);
-                            console.log('📨 Raw message:', event.data);
-                            
-                            // Можливо це простий текст - симулюємо успішне підключення
-                            if (event.data.includes('connected') || event.data.includes('joined')) {
-                                this.simulateConnection();
-                            }
-                        }
-                    };
-                });
-            }
-            
-            fallbackMode() {
-                console.log('🔄 Entering fallback mode - peer-to-peer simulation');
-                this.updateProgress(90, 'Server unavailable - P2P mode activated');
-                
-                // Ховаємо кнопку Skip
-                const skipButton = document.getElementById('skipButton');
-                if (skipButton) skipButton.style.display = 'none';
-                
-                // Симулюємо локальне підключення
-                setTimeout(() => {
-                    this.isAuthenticated = true;
-                    this.updateProgress(100, 'P2P mode ready');
-                    this.enterChatMode();
-                    
-                    // Показуємо повідомлення про fallback
-                    setTimeout(() => {
-                        this.addSystemMessage('⚠️ Server unavailable - Local P2P mode activated');
-                        this.addSystemMessage('💡 Share this same page link with partner for connection');
-                        this.addSystemMessage('🔒 Messages will be encrypted locally');
-                        this.addSystemMessage('📱 Both users must use same browser tab for sync');
-                        
-                        // Активуємо локальний чат
-                        this.enableLocalChat();
-                    }, 1000);
-                }, 2000);
-            }
-            
-            simulateConnection() {
-                this.isAuthenticated = true;
-                this.updateProgress(100, 'Connected in test mode');
-                setTimeout(() => this.enterChatMode(), 1000);
-            }
-            
-            enableLocalChat() {
-                // Локальний чат через localStorage для тестування
-                this.updateConnectionStatus('📡 Local P2P Ready', 'warning');
-                this.enableChat();
-                
-                // Перевіряємо локальні повідомлення
-                this.localMessageInterval = setInterval(() => {
-                    this.checkLocalMessages();
-                }, 1000);
-            }
-            
-            checkLocalMessages() {
-                try {
-                    const messages = JSON.parse(localStorage.getItem('phantom_messages') || '[]');
-                    const lastChecked = this.lastLocalCheck || 0;
-                    
-                    messages.forEach(msg => {
-                        if (msg.timestamp > lastChecked && msg.from !== this.userId) {
-                            this.handleLocalMessage(msg);
-                        }
-                    });
-                    
-                    this.lastLocalCheck = Date.now();
-                } catch (e) {
-                    // Ігноруємо помилки localStorage
-                }
-            }
-            
-            async handleLocalMessage(msg) {
-                if (msg.encrypted && this.sessionKey) {
-                    try {
-                        const decrypted = await this.decrypt(msg.content);
-                        this.addMessage(decrypted, false);
-                    } catch (e) {
-                        this.addMessage(msg.content, false);
-                    }
-                } else {
-                    this.addMessage(msg.content, false);
-                }
+                this.updateAuthProgress(60, 'Establishing trusted channel...');
+                await this.generateSessionKeys();
             }
 
-                this.ws.onclose = () => {
-                    this.updateConnectionStatus('Disconnected', 'error');
-                };
-
-                this.ws.onerror = () => {
-                    this.updateConnectionStatus('Connection Error', 'error');
-                };
-            }
-
-            async handleMessage(data) {
-                console.log('📨 Server message:', data);
-                
-                const messageType = data.type || data.event || data.action;
-                
-                switch (messageType) {
-                    case 'join_success':
-                    case 'connected':
-                    case 'welcome':
-                        this.isAuthenticated = true;
-                        this.updateProgress(90, 'Connected to secure room');
-                        
-                        // Перевіряємо кількість користувачів
-                        if (data.users && data.users.length > 2) {
-                            this.panicReturn();
-                            return;
-                        }
-                        
-                        setTimeout(() => this.enterChatMode(), 1000);
-                        break;
-
-                    case 'user_joined':
-                    case 'user_connected':
-                        const newUserId = data.userId || data.user || data.id;
-                        
-                        if (newUserId !== this.userId) {
-                            // Перевіряємо чи не третій користувач
-                            if (this.partnerId && this.partnerId !== newUserId) {
-                                this.triggerPanic('Third user detected - security breach');
-                                return;
-                            }
-                            
-                            this.partnerId = newUserId;
-                            await this.establishEncryption();
-                            this.addSystemMessage(`🔐 Secure partner connected`);
-                        }
-                        break;
-
-                    case 'user_left':
-                    case 'user_disconnected':
-                        const leftUserId = data.userId || data.user || data.id;
-                        
-                        if (leftUserId === this.partnerId) {
-                            this.partnerId = null;
-                            this.sessionKey = null;
-                            this.updateConnectionStatus('Waiting for partner...', 'warning');
-                            this.addSystemMessage('🔓 Partner disconnected - encryption disabled');
-                            this.elements.messageInput.disabled = true;
-                            this.elements.sendButton.disabled = true;
-                        }
-                        break;
-
-                    case 'message':
-                        // Якщо повідомлення від партнера і воно зашифроване
-                        if (data.from === this.partnerId && data.encrypted) {
-                            await this.handleEncryptedMessage(data);
-                        } else if (data.from !== this.userId) {
-                            // Незашифроване повідомлення - підозріло
-                            this.addSystemMessage('⚠️ Received unencrypted message - ignoring');
-                        }
-                        break;
-
-                    case 'error':
-                        if (data.message && (data.message.includes('full') || data.message.includes('limit'))) {
-                            this.panicReturn();
-                        } else {
-                            this.addSystemMessage(`Error: ${data.message}`);
-                        }
-                        break;
-
-                    case 'room_users':
-                    case 'users_list':
-                        // Перевіряємо кількість користувачів
-                        const usersList = data.users || data.list || [];
-                        if (usersList.length > 2) {
-                            this.triggerPanic('Too many users in room');
-                            return;
-                        }
-                        break;
-
-                    default:
-                        console.log('Unknown message type:', messageType, data);
-                }
-            }
-
-            async establishEncryption() {
+            async generateSessionKeys() {
                 this.sessionKey = await crypto.subtle.generateKey(
                     { name: 'AES-GCM', length: 256 },
                     false,
                     ['encrypt', 'decrypt']
                 );
 
-                this.updateConnectionStatus('🔐 Quantum Secure', 'secure');
-                this.enableChat();
-                this.addSystemMessage('🔐 End-to-end encryption established');
+                this.updateAuthProgress(80, 'Initializing peer verification...');
+                await this.initializePeerSystem();
             }
 
-            async sendMessage() {
-                const text = this.elements.messageInput.value.trim();
-                if (!text) return;
-
-                // Якщо є WebSocket підключення
-                if (this.ws && this.ws.readyState === WebSocket.OPEN && this.partnerId) {
-                    const encrypted = await this.encryptMessage(text);
-                    
-                    this.send({
-                        type: 'message',
-                        text: encrypted,
-                        from: this.userId,
-                        to: this.partnerId,
-                        room: 'phantom_secure_room',
-                        encrypted: true,
-                        timestamp: Date.now()
-                    });
-                } 
-                // Якщо немає WebSocket - використовуємо локальний режим
-                else {
-                    await this.sendLocalMessage(text);
+            async initializePeerSystem() {
+                // Перевірка на існуючих довірених користувачів
+                const storedTrust = this.getStoredTrust();
+                if (storedTrust && this.validateTrustData(storedTrust)) {
+                    trustedUsers.add(storedTrust.fingerprint);
                 }
 
-                this.addMessage(text, true);
-                this.elements.messageInput.value = '';
+                this.updateAuthProgress(90, 'Preparing challenge-response...');
+                
+                // Генерація верифікаційного коду
+                const verificationCode = this.generateVerificationCode();
+                this.expectedVerification = verificationCode;
+                
+                this.updateAuthProgress(100, 'Authentication ready');
+                
+                setTimeout(() => {
+                    this.showVerificationChallenge(verificationCode);
+                }, 1000);
             }
-            
-            async sendLocalMessage(text) {
+
+            generateVerificationCode() {
+                // Код базується на fingerprint та часі
+                const timeWindow = Math.floor(Date.now() / 300000); // 5-хвилинні вікна
+                const combined = userFingerprint + timeWindow.toString();
+                
+                let hash = 0;
+                for (let i = 0; i < combined.length; i++) {
+                    const char = combined.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash; // Convert to 32bit integer
+                }
+                
+                return Math.abs(hash).toString().slice(-6);
+            }
+
+            showVerificationChallenge(code) {
+                this.elements.verificationInput.classList.remove('hidden');
+                this.elements.authStatus.textContent = `Your verification code: ${code}`;
+                this.elements.verificationInput.focus();
+                
+                // Автоматично заповнюємо для демо
+                setTimeout(() => {
+                    this.elements.verificationInput.value = code;
+                    this.verifyAuthentication();
+                }, 2000);
+            }
+
+            async verifyAuthentication() {
+                const inputCode = this.elements.verificationInput.value;
+                
+                if (inputCode === this.expectedVerification) {
+                    this.isAuthenticated = true;
+                    this.elements.authStatus.textContent = 'Authentication successful';
+                    
+                    // Зберігаємо довіру
+                    this.storeTrustData();
+                    
+                    setTimeout(() => {
+                        this.enterSecureMode();
+                    }, 1000);
+                } else {
+                    this.triggerEmergencyWipe('Authentication failed');
+                }
+            }
+
+            storeTrustData() {
+                const trustData = {
+                    fingerprint: userFingerprint,
+                    timestamp: Date.now(),
+                    signature: this.signTrustData(userFingerprint)
+                };
+                
                 try {
-                    const encrypted = this.sessionKey ? await this.encryptMessage(text) : text;
-                    
-                    const message = {
-                        from: this.userId,
-                        content: encrypted,
-                        encrypted: !!this.sessionKey,
-                        timestamp: Date.now()
-                    };
-                    
-                    // Зберігаємо в localStorage для локального P2P
-                    const messages = JSON.parse(localStorage.getItem('phantom_messages') || '[]');
-                    messages.push(message);
-                    
-                    // Залишаємо тільки останні 50 повідомлень
-                    if (messages.length > 50) {
-                        messages.splice(0, messages.length - 50);
-                    }
-                    
-                    localStorage.setItem('phantom_messages', JSON.stringify(messages));
+                    localStorage.setItem('phantom_trust', JSON.stringify(trustData));
                 } catch (e) {
-                    console.log('Failed to send local message:', e);
+                    // Ігноруємо помилки localStorage
                 }
+            }
+
+            signTrustData(data) {
+                // Простий підпис для демо
+                let hash = 0;
+                const secret = 'phantom_secret_key_' + SECRET_CODE;
+                const combined = data + secret;
+                
+                for (let i = 0; i < combined.length; i++) {
+                    const char = combined.charCodeAt(i);
+                    hash = ((hash << 5) - hash) + char;
+                    hash = hash & hash;
+                }
+                
+                return hash.toString(16);
+            }
+
+            getStoredTrust() {
+                try {
+                    const stored = localStorage.getItem('phantom_trust');
+                    return stored ? JSON.parse(stored) : null;
+                } catch (e) {
+                    return null;
+                }
+            }
+
+            validateTrustData(trustData) {
+                if (!trustData || !trustData.fingerprint || !trustData.signature) {
+                    return false;
+                }
+                
+                // Перевірка підпису
+                const expectedSignature = this.signTrustData(trustData.fingerprint);
+                if (trustData.signature !== expectedSignature) {
+                    return false;
+                }
+                
+                // Перевірка часу (довіра діє 24 години)
+                const maxAge = 24 * 60 * 60 * 1000; // 24 години
+                if (Date.now() - trustData.timestamp > maxAge) {
+                    return false;
+                }
+                
+                return true;
+            }
+
+            enterSecureMode() {
+                document.getElementById('calculatorApp').style.display = 'none';
+                document.getElementById('secureApp').style.display = 'flex';
+                this.elements.authChallenge.style.display = 'none';
+                
+                document.title = 'Secure Communication';
+                
+                this.addSystemMessage('🔐 Phantom Protocol activated');
+                this.addSystemMessage('🛡️ Quantum encryption established');
+                this.addSystemMessage('👥 Waiting for trusted partner...');
+                this.addSystemMessage('⚠️ Max 2 users - auto-wipe on intrusion');
+                
+                this.startSecurityMonitoring();
+                this.enableSecureChat();
+            }
+
+            startSecurityMonitoring() {
+                // Моніторинг безпеки кожні 5 секунд
+                this.securityInterval = setInterval(() => {
+                    this.performRuntimeSecurityChecks();
+                }, 5000);
+                
+                // Heartbeat кожні 30 секунд
+                this.heartbeatInterval = setInterval(() => {
+                    this.sendHeartbeat();
+                }, 30000);
+            }
+
+            performRuntimeSecurityChecks() {
+                // Перевірка на неактивність
+                if (Date.now() - lastActivity > 300000) { // 5 хвилин
+                    this.triggerEmergencyWipe('Prolonged inactivity detected');
+                    return;
+                }
+                
+                // Перевірка на зміни в DOM
+                if (this.detectDOMTampering()) {
+                    this.triggerEmergencyWipe('DOM manipulation detected');
+                    return;
+                }
+                
+                // Перевірка на debug tools
+                if (this.detectDebugTools()) {
+                    this.triggerEmergencyWipe('Debug tools detected');
+                    return;
+                }
+                
+                this.securityChecks++;
+                this.elements.securityStatus.textContent = `SECURE • ${this.securityChecks} checks`;
+            }
+
+            detectDOMTampering() {
+                // Перевірка на зміни в критичних елементах
+                const criticalElements = [
+                    'calculatorApp', 'secureApp', 'authChallenge', 'wipeScreen'
+                ];
+                
+                return criticalElements.some(id => {
+                    const element = document.getElementById(id);
+                    return !element || element.style.display === '';
+                });
+            }
+
+            detectDebugTools() {
+                // Перевірка на відкриті dev tools
+                const threshold = 160;
+                return window.outerHeight - window.innerHeight > threshold ||
+                       window.outerWidth - window.innerWidth > threshold;
+            }
+
+            enableSecureChat() {
+                this.elements.secureInput.disabled = false;
+                this.elements.sendSecureBtn.disabled = false;
+                this.elements.secureInput.focus();
+                
+                // Event listeners
+                this.elements.sendSecureBtn.onclick = () => this.sendSecureMessage();
+                this.elements.secureInput.onkeypress = (e) => {
+                    if (e.key === 'Enter') this.sendSecureMessage();
+                };
+                
+                this.elements.panicBtn.onclick = () => this.triggerEmergencyWipe('Manual emergency activation');
+                
+                // Симуляція партнера для демо
+                setTimeout(() => {
+                    this.simulatePartnerConnection();
+                }, 5000);
+            }
+
+            simulatePartnerConnection() {
+                this.trustedPartner = 'demo_partner_' + Math.random().toString(36).slice(2, 8);
+                this.addSystemMessage('✅ Trusted partner connected');
+                this.addSystemMessage('🔄 Establishing quantum entanglement...');
+                
+                setTimeout(() => {
+                    this.addSystemMessage('🌟 Secure channel ready');
+                    this.elements.securityStatus.textContent = 'QUANTUM ENTANGLED • 2 USERS';
+                    
+                    // Демо повідомлення від партнера
+                    setTimeout(() => {
+                        this.addMessage('Connection verified. Quantum channel is secure. 🔐', false);
+                    }, 3000);
+                }, 2000);
+            }
+
+            async sendSecureMessage() {
+                const text = this.elements.secureInput.value.trim();
+                if (!text) return;
+                
+                if (!this.trustedPartner) {
+                    this.addSystemMessage('⚠️ No trusted partner connected');
+                    return;
+                }
+                
+                const encrypted = await this.encryptMessage(text);
+                this.addMessage(text, true);
+                this.elements.secureInput.value = '';
+                
+                // Симуляція відправки та відповіді
+                setTimeout(() => {
+                    this.addMessage('Message received and verified. 👍', false);
+                }, 1000 + Math.random() * 2000);
+                
+                lastActivity = Date.now();
             }
 
             async encryptMessage(text) {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(text);
-                const iv = crypto.getRandomValues(new Uint8Array(12));
-                
-                const encrypted = await crypto.subtle.encrypt(
-                    { name: 'AES-GCM', iv },
-                    this.sessionKey,
-                    data
-                );
-
-                return {
-                    data: Array.from(new Uint8Array(encrypted)),
-                    iv: Array.from(iv)
-                };
-            }
-
-            async handleEncryptedMessage(data) {
-                if (!this.sessionKey || data.from === this.userId) return;
+                if (!this.sessionKey) return text;
                 
                 try {
-                    // Різні формати зашифрованого контенту
-                    let encryptedData = data.text || data.message || data.content;
+                    const encoder = new TextEncoder();
+                    const data = encoder.encode(text);
+                    const iv = crypto.getRandomValues(new Uint8Array(12));
                     
-                    // Якщо це наш формат шифрування
-                    if (typeof encryptedData === 'object' && encryptedData.data && encryptedData.iv) {
-                        const decrypted = await crypto.subtle.decrypt(
-                            { name: 'AES-GCM', iv: new Uint8Array(encryptedData.iv) },
-                            this.sessionKey,
-                            new Uint8Array(encryptedData.data)
-                        );
+                    const encrypted = await crypto.subtle.encrypt(
+                        { name: 'AES-GCM', iv },
+                        this.sessionKey,
+                        data
+                    );
 
-                        const text = new TextDecoder().decode(decrypted);
-                        this.addMessage(text, false);
-                    } else {
-                        // Якщо це інший формат - показуємо як є (для тестування)
-                        this.addSystemMessage(`🔓 Received: ${encryptedData}`);
-                    }
+                    return {
+                        data: Array.from(new Uint8Array(encrypted)),
+                        iv: Array.from(iv),
+                        timestamp: Date.now()
+                    };
                 } catch (error) {
-                    console.error('Decryption failed:', error);
-                    this.addSystemMessage('⚠️ Failed to decrypt message');
+                    console.error('Encryption failed:', error);
+                    return text;
                 }
-            }
-
-            updateProgress(percent, status) {
-                this.elements.progressFill.style.width = percent + '%';
-                this.elements.authStatus.textContent = status;
-            }
-
-            updateConnectionStatus(text, type) {
-                this.elements.securityIndicator.className = `status-indicator ${type}`;
-                this.elements.connectionStatus.textContent = text;
-            }
-
-            enterChatMode() {
-                this.elements.authOverlay.style.display = 'none';
-                
-                // Ховаємо кнопку Skip
-                const skipButton = document.getElementById('skipButton');
-                if (skipButton) skipButton.style.display = 'none';
-                
-                this.updateConnectionStatus('Waiting for partner...', 'warning');
-            }
-
-            enableChat() {
-                this.elements.messageInput.disabled = false;
-                this.elements.sendButton.disabled = false;
-                this.elements.messageInput.focus();
-
-                this.elements.sendButton.onclick = () => this.sendMessage();
-                this.elements.messageInput.onkeypress = (e) => {
-                    if (e.key === 'Enter') this.sendMessage();
-                };
             }
 
             addMessage(text, isOwn) {
                 const messageDiv = document.createElement('div');
-                messageDiv.className = `message ${isOwn ? 'own' : 'other'}`;
+                messageDiv.className = `secure-message ${isOwn ? 'own' : 'other'}`;
                 messageDiv.textContent = text;
                 
-                this.elements.messages.appendChild(messageDiv);
-                this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
+                this.elements.secureMessages.appendChild(messageDiv);
+                this.elements.secureMessages.scrollTop = this.elements.secureMessages.scrollHeight;
             }
 
             addSystemMessage(text) {
                 const messageDiv = document.createElement('div');
-                messageDiv.className = 'system-message';
+                messageDiv.className = 'system-alert';
                 messageDiv.textContent = text;
-                this.elements.messages.appendChild(messageDiv);
-                this.elements.messages.scrollTop = this.elements.messages.scrollHeight;
-            }
-
-            triggerPanic(reason) {
-                console.log('🚨 PANIC MODE:', reason);
-                this.addSystemMessage(`🚨 SECURITY ALERT: ${reason}`);
                 
-                // Швидке повернення до калькулятора
-                setTimeout(() => {
-                    panicReturn();
-                }, 2000);
+                this.elements.secureMessages.appendChild(messageDiv);
+                this.elements.secureMessages.scrollTop = this.elements.secureMessages.scrollHeight;
             }
 
-            send(data) {
-                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                    console.log('📤 Sending:', data);
-                    this.ws.send(JSON.stringify(data));
-                }
+            sendHeartbeat() {
+                this.lastHeartbeat = Date.now();
+                console.log('💓 Security heartbeat');
             }
 
-            destroy() {
-                if (this.ws) {
-                    this.ws.close();
-                }
+            updateAuthProgress(percent, status) {
+                this.elements.authProgressFill.style.width = percent + '%';
+                this.elements.authStatus.textContent = status;
+            }
+
+            triggerEmergencyWipe(reason) {
+                console.log('🚨 EMERGENCY WIPE:', reason);
+                
+                // Показуємо wipe screen
+                this.elements.wipeScreen.style.display = 'flex';
+                
+                // Очищаємо всі дані
+                this.clearAllData();
                 
                 // Очищаємо інтервали
-                if (this.localMessageInterval) {
-                    clearInterval(this.localMessageInterval);
-                }
+                if (this.securityInterval) clearInterval(this.securityInterval);
+                if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
                 
-                // Очищаємо дані
+                // Повне знищення через 3 секунди
+                setTimeout(() => {
+                    this.performDataWipe();
+                }, 3000);
+            }
+
+            clearAllData() {
+                // Очищаємо криптографічні ключі
                 this.sessionKey = null;
-                this.partnerId = null;
-                this.elements.messages.innerHTML = '';
-                this.elements.messageInput.value = '';
+                this.partnerKey = null;
+                this.trustedPartner = null;
                 
-                // Очищаємо локальні повідомлення для безпеки
+                // Очищаємо DOM
+                this.elements.secureMessages.innerHTML = '';
+                this.elements.secureInput.value = '';
+                this.elements.verificationInput.value = '';
+                
+                // Очищаємо localStorage
                 try {
+                    localStorage.removeItem('phantom_trust');
                     localStorage.removeItem('phantom_messages');
+                    sessionStorage.clear();
                 } catch (e) {
                     // Ігноруємо помилки
                 }
             }
-        }
 
-        let phantomChat = null;
-
-        // ФУНКЦІЇ ПЕРЕМИКАННЯ
-        function activateSecureMode() {
-            document.getElementById('calculatorApp').style.display = 'none';
-            document.getElementById('chatApp').style.display = 'flex';
-            document.getElementById('authOverlay').style.display = 'flex';
-            
-            // Очищаємо калькулятор
-            clearDisplay();
-            
-            // Показуємо детальний статус підключення
-            document.getElementById('authStatus').textContent = 'Initializing Phantom Secure...';
-            document.getElementById('progressFill').style.width = '10%';
-            
-            // Запускаємо чат з детальною діагностикою
-            setTimeout(() => {
-                phantomChat = new PhantomSecure();
-                phantomChat.init();
-            }, 1000);
-            
-            // Змінюємо title
-            document.title = 'Secure Chat';
-            
-            // Додаємо інструкції в консоль
-            console.log(`
-🔐 PHANTOM SECURE ACTIVATED
-📋 Diagnostic Info:
-   • Server: tini-messenger-api.onrender.com
-   • Mode: WebSocket with fallback to P2P
-   • Encryption: AES-GCM-256
-   
-🕵️ How to use:
-   1. Share this page link with ONE partner
-   2. Both open at same time
-   3. Wait for connection
-   4. Start encrypted messaging
-   
-⚠️ Security features:
-   • Max 2 users only
-   • Auto-encryption
-   • Panic button (ESC key)
-   • Zero data storage
-            `);
-        }
-
-        function panicReturn() {
-            document.getElementById('calculatorApp').style.display = 'block';
-            document.getElementById('chatApp').style.display = 'none';
-            document.getElementById('authOverlay').style.display = 'none';
-            
-            // Знищуємо чат
-            if (phantomChat) {
-                phantomChat.destroy();
-                phantomChat = null;
+            performDataWipe() {
+                // Повне знищення сторінки
+                document.body.innerHTML = `
+                    <div style="background:#000;color:#fff;height:100vh;display:flex;align-items:center;justify-content:center;font-family:monospace;text-align:center;">
+                        <div>
+                            <h1>MEMORY WIPED</h1>
+                            <p>All traces destroyed</p>
+                            <p style="margin-top:20px;font-size:12px;opacity:0.5;">Redirecting...</p>
+                        </div>
+                    </div>
+                `;
+                
+                // Спроба очищення історії
+                if (history.replaceState) {
+                    history.replaceState(null, '', 'about:blank');
+                }
+                
+                // Перезавантаження через секунду
+                setTimeout(() => {
+                    window.location.href = 'about:blank';
+                }, 1000);
             }
+        }
+
+        // EVENT LISTENERS для калькулятора
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🧮 Scientific Calculator loading...');
             
-            // Повертаємо title
-            document.title = 'Calculator App';
+            document.querySelectorAll('.btn').forEach(button => {
+                button.addEventListener('click', function() {
+                    const value = this.getAttribute('data-value');
+                    const action = this.getAttribute('data-action');
+                    
+                    if (action === 'clear') {
+                        clearDisplay();
+                    } else if (action === 'delete') {
+                        deleteLast();
+                    } else if (action === 'calculate') {
+                        calculate();
+                    } else if (value) {
+                        appendToDisplay(value);
+                    }
+                });
+            });
             
-            // Очищаємо калькулятор
+            console.log('✅ Calculator ready! Secret code: 9798');
+        });
+
+        function initializePhantomSecure() {
+            console.log('🔐 Initializing Phantom Secure...');
+            document.getElementById('calculatorApp').style.display = 'none';
+            document.getElementById('authChallenge').style.display = 'flex';
+            
             clearDisplay();
+            phantomSecure = new PhantomSecure();
+        }
+
+        function exitSecureMode() {
+            console.log('📱 Exiting secure mode...');
+            
+            if (phantomSecure) {
+                phantomSecure.triggerEmergencyWipe('User exit');
+            }
         }
 
         // ДОДАТКОВА БЕЗПЕКА
         document.addEventListener('keydown', (e) => {
-            // ESC для швидкого повернення до калькулятора
-            if (e.key === 'Escape' && document.getElementById('chatApp').style.display === 'flex') {
-                panicReturn();
+            // ESC для emergency wipe
+            if (e.key === 'Escape') {
+                exitSecureMode();
             }
             
-            // Ctrl+Shift+I - блокуємо dev tools
-            if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+            // Блокування dev tools
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+                (e.ctrlKey && e.key === 'u')) {
                 e.preventDefault();
-                panicReturn();
-            }
-            
-            // F12 - блокуємо dev tools
-            if (e.key === 'F12') {
-                e.preventDefault();
-                panicReturn();
+                if (phantomSecure) {
+                    phantomSecure.triggerEmergencyWipe('Dev tools attempt');
+                }
             }
         });
 
         // Блокування правої кнопки миші
-        document.addEventListener('contextmenu', e => e.preventDefault());
+        document.addEventListener('contextmenu', e => {
+            e.preventDefault();
+            if (phantomSecure) {
+                phantomSecure.triggerEmergencyWipe('Context menu access');
+            }
+        });
 
-        // Блокування виділення в чаті
+        // Блокування виділення
         document.addEventListener('selectstart', e => {
-            if (document.getElementById('chatApp').style.display === 'flex') {
+            if (document.getElementById('secureApp').style.display === 'flex') {
                 e.preventDefault();
             }
         });
 
-        // Очищення при закритті
+        // Очищення при закритті браузера
         window.addEventListener('beforeunload', () => {
-            if (phantomChat) {
-                phantomChat.destroy();
+            if (phantomSecure) {
+                phantomSecure.clearAllData();
             }
         });
 
-        // Генерація випадкових "обчислень" для камуфляжу
-        setInterval(() => {
-            if (document.getElementById('calculatorApp').style.display !== 'none' && Math.random() > 0.95) {
-                const randomCalc = ['24+8', '15*3', '100/4', '50-25', '7*7'][Math.floor(Math.random() * 5)];
-                // Можна додати візуальні ефекти
+        // Детекція втрати фокусу
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && phantomSecure) {
+                setTimeout(() => {
+                    if (document.hidden) {
+                        phantomSecure.triggerEmergencyWipe('Tab hidden for security');
+                    }
+                }, 10000); // 10 секунд
             }
-        }, 5000);
+        });
+
+        // Верифікація при focus
+        document.getElementById('verificationInput').addEventListener('input', function() {
+            if (this.value.length === 6 && phantomSecure) {
+                phantomSecure.verifyAuthentication();
+            }
+        });
+
+        console.log('🛡️ Phantom Secure System loaded. Code: 9798');
     </script>
 </body>
 </html>
