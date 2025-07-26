@@ -1256,7 +1256,10 @@
                 this.elements.panicBtn.onclick = () => this.triggerEmergencyWipe('Manual emergency activation');
                 
                 // Ініціалізуємо справжню P2P синхронізацію
-                this.p2p = new PhantomP2P(this);
+                
+// Замість P2P - WebSocket
+initWebSocket('phantom_room_001', this.userId, (msg) => this.addMessage(msg, false));
+
                 this.addSystemMessage('🔄 Looking for P2P partner...');
                 this.addSystemMessage('📡 Share this link with your partner');
             }
@@ -1282,7 +1285,12 @@
                 if (!text) return;
                 
                 // Спробуємо відправити через P2P
-                if (this.p2p && this.p2p.sendMessage(text)) {
+                
+sendWebSocketMessage('phantom_room_001', this.userId, text);
+this.addMessage(text, true);
+this.elements.secureInput.value = '';
+return;
+
                     // Повідомлення відправлено успішно
                     this.addMessage(text, true);
                     this.elements.secureInput.value = '';
@@ -1532,7 +1540,42 @@
             }
         });
 
-        // НЕ логуємо завантаження системи в консоль
+        
+// 🌐 WebSocket setup
+const WS_SERVER_URL = "wss://tini-messenger-api.onrender.com";
+let ws = null;
+
+function initWebSocket(roomId, userId, onMessage) {
+    ws = new WebSocket(WS_SERVER_URL);
+    ws.onopen = () => {
+        console.log("[WS] Connected");
+    };
+    ws.onmessage = (event) => {
+        try {
+            const data = JSON.parse(event.data);
+            if (data.text && data.from !== userId) {
+                onMessage(data.text);
+            }
+        } catch (e) {
+            console.warn("Invalid WS message", e);
+        }
+    };
+    ws.onclose = () => console.warn("[WS] Disconnected");
+}
+
+function sendWebSocketMessage(roomId, userId, text) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        ws.send(JSON.stringify({
+            roomId: roomId,
+            userId: userId,
+            type: "message",
+            text: text
+        }));
+    }
+}
+
+
+// НЕ логуємо завантаження системи в консоль
         // Весь код працює без розкриття секретів
     </script>
 </body>
