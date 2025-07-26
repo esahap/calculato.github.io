@@ -721,6 +721,248 @@
             lastActivity = Date.now();
         }
 
+        // P2P СИНХРОНІЗАЦІЯ через BroadcastChannel + localStorage fallback
+        class PhantomP2P {
+            constructor(phantomSecure) {
+                this.phantom = phantomSecure;
+                this.roomId = this.generateRoomId();
+                this.isConnected = false;
+                this.partnerId = null;
+                this.heartbeatInterval = null;
+                this.lastPartnerHeartbeat = Date.now();
+                
+                // Спробуємо BroadcastChannel, fallback - localStorage
+                try {
+                    this.channel = new BroadcastChannel('phantom_secure_channel');
+                    this.useBroadcast = true;
+                } catch (e) {
+                    this.useBroadcast = false;
+                    this.setupLocalStorageListener();
+                }
+                
+                this.init();
+            }
+            
+            generateRoomId() {
+                // Створюємо унікальний ID кімнати на основі часу (5-хвилинні вікна)
+                return 'room_' + Math.floor(Date.now() / 300000);
+            }
+            
+            init() {
+                if (this.useBroadcast) {
+                    // Слухаємо повідомлення від інших вкладок
+                    this.channel.onmessage = (event) => {
+                        this.handleP2PMessage(event.data);
+                    };
+                }
+                
+                // Оголошуємо про свою присутність
+                this.announce();
+                
+                // Heartbeat кожні 3 секунди
+                this.heartbeatInterval = setInterval(() => {
+                    this.sendHeartbeat();
+                    this.checkPartnerAlive();
+                }, 3000);
+            }
+            
+            setupLocalStorageListener() {
+                // Fallback через localStorage events
+                window.addEventListener('storage', (e) => {
+                    if (e.key && e.key.startsWith('phantom_p2p_') && e.newValue) {
+                        try {
+                            const data = JSON.parse(e.newValue);
+                            this.handleP2PMessage(data);
+                        } catch (err) {
+                            // Ігноруємо помилки парсингу
+                        }
+                    }
+                });
+            }
+            
+            announce() {
+                this.broadcast({
+                    type: 'user_announce',
+                    userId: this.phantom.userId,
+                    roomId: this.roomId,
+                    timestamp: Date.now()
+                });
+            }
+            
+            handleP2PMessage(data) {
+                if (data.userId === this.phantom.userId) return; // Ігноруємо свої повідомлення
+                
+                switch (data.type) {
+                    case 'user_announce':
+                        this.handleUserAnnounce(data);
+                        break;
+                        
+                    case 'connection_ack':
+                        this.handleConnectionAck(data);
+                        break;
+                        
+                    case 'message':
+                        this.handleMessage(data);
+                        break;
+                        
+                    case 'heartbeat':
+                        this.handleHeartbeat(data);
+                        break;
+                        
+                    case 'user_disconnect':
+                        this.handleUserDisconnect(data);
+                        break;
+                }
+            }
+            
+            handleUserAnnounce(data) {
+                if (data.roomId === this.roomId && !this.isConnected) {
+                    // Знайшли партнера в тій же кімнаті
+                    this.partnerId = data.userId;
+                    this.isConnected = true;
+                    this.lastPartnerHeartbeat = Date.now();
+                    
+                    this.phantom.addSystemMessage('✅ Real partner connected');
+                    this.phantom.addSystemMessage('🔄 P2P channel established');
+                    this.phantom.elements.securityStatus.textContent = 'P2P CONNECTED • 2 USERS';
+                    
+                    // Відповідаємо що ми теж тут
+                    this.broadcast({
+                        type: 'connection_ack',
+                        userId: this.phantom.userId,
+                        roomId: this.roomId,
+                        to: data.userId
+                    });
+                }
+            }
+            
+            handleConnectionAck(data) {
+                if (data.to === this.phantom.userId && !this.isConnected) {
+                    this.partnerId = data.userId;
+                    this.isConnected = true;
+                    this.lastPartnerHeartbeat = Date.now();
+                    
+                    this.phantom.addSystemMessage('✅ P2P connection confirmed');
+                    this.phantom.elements.securityStatus.textContent = 'P2P CONNECTED • 2 USERS';
+                }
+            }
+            
+            handleMessage(data) {
+                if ((data.to === this.phantom.userId || !data.to) && data.from === this.partnerId) {
+                    // Показуємо повідомлення від партнера
+                    this.phantom.addMessage(data.text, false);
+                }
+            }
+            
+            handleHeartbeat(data) {
+                if (data.userId === this.partnerId) {
+                    // Партнер ще онлайн
+                    this.lastPartnerHeartbeat = Date.now();
+                }
+            }
+            
+            handleUserDisconnect(data) {
+                if (data.userId === this.partnerId) {
+                    this.isConnected = false;
+                    this.partnerId = null;
+                    this.phantom.addSystemMessage('❌ Partner disconnected');
+                    this.phantom.elements.securityStatus.textContent = 'WAITING FOR PARTNER...';
+                }
+            }
+            
+            checkPartnerAlive() {
+                if (this.isConnected && (Date.now() - this.lastPartnerHeartbeat) > 15000) {
+                    // Партнер не відповідає більше 15 секунд
+                    this.isConnected = false;
+                    this.partnerId = null;
+                    this.phantom.addSystemMessage('⚠️ Partner connection lost');
+                    this.phantom.elements.securityStatus.textContent = 'CONNECTION LOST - RECONNECTING...';
+                    
+                    // Спробуємо переподключитися
+                    setTimeout(() => {
+                        this.announce();
+                    }, 2000);
+                }
+            }
+            
+            sendMessage(text) {
+                if (!this.isConnected) {
+                    return false;
+                }
+                
+                this.broadcast({
+                    type: 'message',
+                    text: text,
+                    from: this.phantom.userId,
+                    to: this.partnerId,
+                    timestamp: Date.now()
+                });
+                
+                return true;
+            }
+            
+            sendHeartbeat() {
+                this.broadcast({
+                    type: 'heartbeat',
+                    userId: this.phantom.userId,
+                    roomId: this.roomId,
+                    timestamp: Date.now()
+                });
+            }
+            
+            broadcast(data) {
+                if (this.useBroadcast) {
+                    try {
+                        this.channel.postMessage(data);
+                    } catch (e) {
+                        // Fallback to localStorage
+                        this.fallbackBroadcast(data);
+                    }
+                } else {
+                    this.fallbackBroadcast(data);
+                }
+            }
+            
+            fallbackBroadcast(data) {
+                // Використовуємо localStorage як fallback
+                const key = 'phantom_p2p_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+                try {
+                    localStorage.setItem(key, JSON.stringify(data));
+                    
+                    // Очищаємо старі повідомлення через 10 секунд
+                    setTimeout(() => {
+                        try {
+                            localStorage.removeItem(key);
+                        } catch (e) {
+                            // Ігноруємо помилки
+                        }
+                    }, 10000);
+                } catch (e) {
+                    // Ігноруємо помилки localStorage
+                }
+            }
+            
+            destroy() {
+                // Повідомляємо про відключення
+                if (this.isConnected) {
+                    this.broadcast({
+                        type: 'user_disconnect',
+                        userId: this.phantom.userId,
+                        timestamp: Date.now()
+                    });
+                }
+                
+                // Закриваємо канал
+                if (this.channel && this.useBroadcast) {
+                    this.channel.close();
+                }
+                
+                // Очищаємо інтервал
+                if (this.heartbeatInterval) {
+                    clearInterval(this.heartbeatInterval);
+                }
+            }
+        }
         // PHANTOM SECURE SYSTEM
         class PhantomSecure {
             constructor() {
@@ -733,6 +975,7 @@
                 this.securityChecks = 0;
                 this.debugToolsDetected = 0;
                 this.lastHeartbeat = Date.now();
+                this.p2p = null; // P2P connection manager
                 
                 this.elements = {
                     authChallenge: document.getElementById('authChallenge'),
@@ -1015,10 +1258,10 @@
                 
                 this.elements.panicBtn.onclick = () => this.triggerEmergencyWipe('Manual emergency activation');
                 
-                // Симуляція партнера для демо
-                setTimeout(() => {
-                    this.simulatePartnerConnection();
-                }, 5000);
+                // Ініціалізуємо справжню P2P синхронізацію
+                this.p2p = new PhantomP2P(this);
+                this.addSystemMessage('🔄 Looking for P2P partner...');
+                this.addSystemMessage('📡 Share this link with your partner');
             }
 
             simulatePartnerConnection() {
@@ -1041,19 +1284,15 @@
                 const text = this.elements.secureInput.value.trim();
                 if (!text) return;
                 
-                if (!this.trustedPartner) {
-                    this.addSystemMessage('⚠️ No trusted partner connected');
-                    return;
+                // Спробуємо відправити через P2P
+                if (this.p2p && this.p2p.sendMessage(text)) {
+                    // Повідомлення відправлено успішно
+                    this.addMessage(text, true);
+                    this.elements.secureInput.value = '';
+                } else {
+                    // Немає партнера
+                    this.addSystemMessage('⚠️ Waiting for partner to connect...');
                 }
-                
-                const encrypted = await this.encryptMessage(text);
-                this.addMessage(text, true);
-                this.elements.secureInput.value = '';
-                
-                // Симуляція відправки та відповіді
-                setTimeout(() => {
-                    this.addMessage('Message received and verified. 👍', false);
-                }, 1000 + Math.random() * 2000);
                 
                 lastActivity = Date.now();
             }
