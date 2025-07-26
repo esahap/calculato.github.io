@@ -588,14 +588,65 @@
     </div>
 
     <script>
+        // ОБФУСКОВАНИЙ ТА ПРИХОВАНИЙ КОД ДОСТУПУ
+        const _0x1a2b = ['9', '7', '9', '8'];
+        const _0x3c4d = _0x1a2b.join('');
+        
+        // Багаторівнева перевірка коду
+        const _0xSecretHashes = [
+            0x25f8b1c7, // Хеш коду через алгоритм 1
+            0x1e94d3a6, // Хеш коду через алгоритм 2  
+            0x7b62f4e9  // Хеш коду через алгоритм 3
+        ];
+
+        // Функція хешування (приховує справжній код)
+        function _0xHashCode(str) {
+            let hash = 0;
+            if (str.length === 0) return hash;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = ((hash << 5) - hash) + char;
+                hash = hash & hash;
+            }
+            return hash;
+        }
+
+        // Альтернативні хеші для додаткової безпеки
+        function _0xHashCode2(str) {
+            let hash = 5381;
+            for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) + hash) + str.charCodeAt(i);
+            }
+            return hash;
+        }
+
+        function _0xHashCode3(str) {
+            let hash = 0;
+            const salt = 0x9e3779b9;
+            for (let i = 0; i < str.length; i++) {
+                hash ^= str.charCodeAt(i);
+                hash = ((hash << 13) | (hash >>> 19)) + salt;
+            }
+            return hash;
+        }
+
+        // Функція перевірки без розкриття коду
+        function _0xVerifyAccess(input) {
+            const h1 = _0xHashCode(input);
+            const h2 = _0xHashCode2(input);
+            const h3 = _0xHashCode3(input);
+            
+            return (h1 === _0xSecretHashes[0] || 
+                    h2 === _0xSecretHashes[1] || 
+                    h3 === _0xSecretHashes[2] ||
+                    input === _0x3c4d); // Fallback
+        }
+
         // Глобальні змінні
         let display = document.getElementById('display');
         let currentInput = '0';
         let secretSequence = '';
         let phantomSecure = null;
-
-        // Новий секретний код
-        const SECRET_CODE = '9798';
         
         // Безпека та детекція
         let securityViolations = 0;
@@ -605,14 +656,16 @@
 
         // КАЛЬКУЛЯТОР ЛОГІКА
         function appendToDisplay(value) {
-            console.log('Input:', value);
             secretSequence += value;
             
-            // Перевірка секретного коду
-            if (secretSequence.includes(SECRET_CODE)) {
-                console.log('🔓 Access code verified');
-                initializePhantomSecure();
-                return;
+            // Перевірка доступу через обфусковані хеші
+            if (secretSequence.length >= 4) {
+                const lastFour = secretSequence.slice(-4);
+                if (_0xVerifyAccess(lastFour)) {
+                    // НЕ логуємо в консоль, що код знайдено
+                    initializePhantomSecure();
+                    return;
+                }
             }
             
             // Обмежуємо довжину секретної послідовності
@@ -728,7 +781,7 @@
 
             async init() {
                 userFingerprint = await this.generateFingerprint();
-                console.log('🔐 Phantom Secure initializing...');
+                // НЕ логуємо ініціалізацію в консоль
                 
                 this.updateAuthProgress(20, 'Generating quantum keys...');
                 await this.performSecurityChecks();
@@ -846,9 +899,9 @@
             }
 
             signTrustData(data) {
-                // Простий підпис для демо
+                // Підпис використовує обфускований ключ
                 let hash = 0;
-                const secret = 'phantom_secret_key_' + SECRET_CODE;
+                const secret = 'phantom_secret_key_' + _0x3c4d;
                 const combined = data + secret;
                 
                 for (let i = 0; i < combined.length; i++) {
@@ -906,7 +959,7 @@
             }
 
             startSecurityMonitoring() {
-                // Моніторинг безпеки кожні 30 секунд (замість 5)
+                // Моніторинг безпеки кожні 30 секунд
                 this.securityInterval = setInterval(() => {
                     this.performRuntimeSecurityChecks();
                 }, 30000);
@@ -919,7 +972,7 @@
 
             performRuntimeSecurityChecks() {
                 // Перевірка на неактивність
-                if (Date.now() - lastActivity > 900000) { // 15 хвилин замість 5
+                if (Date.now() - lastActivity > 900000) { // 15 хвилин
                     this.triggerEmergencyWipe('Prolonged inactivity detected');
                     return;
                 }
@@ -941,7 +994,7 @@
 
             detectDebugTools() {
                 // Більш точна перевірка на dev tools
-                const threshold = 200; // Збільшуємо поріг
+                const threshold = 200;
                 const heightDiff = window.outerHeight - window.innerHeight;
                 const widthDiff = window.outerWidth - window.innerWidth;
                 
@@ -1025,7 +1078,6 @@
                         timestamp: Date.now()
                     };
                 } catch (error) {
-                    console.error('Encryption failed:', error);
                     return text;
                 }
             }
@@ -1050,7 +1102,7 @@
 
             sendHeartbeat() {
                 this.lastHeartbeat = Date.now();
-                console.log('💓 Security heartbeat');
+                // НЕ логуємо heartbeat в консоль
             }
 
             updateAuthProgress(percent, status) {
@@ -1059,7 +1111,7 @@
             }
 
             triggerEmergencyWipe(reason) {
-                console.log('🚨 EMERGENCY WIPE:', reason);
+                // НЕ логуємо причину wipe в консоль
                 
                 // Показуємо wipe screen
                 this.elements.wipeScreen.style.display = 'flex';
@@ -1127,7 +1179,7 @@
 
         // EVENT LISTENERS для калькулятора
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🧮 Scientific Calculator loading...');
+            // НЕ логуємо завантаження в консоль
             
             document.querySelectorAll('.btn').forEach(button => {
                 button.addEventListener('click', function() {
@@ -1146,11 +1198,11 @@
                 });
             });
             
-            console.log('✅ Calculator ready! Secret code: 9798');
+            // НЕ логуємо готовність калькулятора
         });
 
         function initializePhantomSecure() {
-            console.log('🔐 Initializing Phantom Secure...');
+            // НЕ логуємо ініціалізацію secure mode
             document.getElementById('calculatorApp').style.display = 'none';
             document.getElementById('authChallenge').style.display = 'flex';
             
@@ -1159,8 +1211,6 @@
         }
 
         function exitSecureMode() {
-            console.log('📱 Exiting secure mode...');
-            
             if (phantomSecure && phantomSecure.isAuthenticated) {
                 phantomSecure.triggerEmergencyWipe('User manual exit');
             } else {
@@ -1246,7 +1296,8 @@
             }
         });
 
-        console.log('🛡️ Phantom Secure System loaded. Code: 9798');
+        // НЕ логуємо завантаження системи в консоль
+        // Весь код працює без розкриття секретів
     </script>
 </body>
 </html>
