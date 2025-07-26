@@ -1580,3 +1580,89 @@ function sendWebSocketMessage(roomId, userId, text) {
     </script>
 </body>
 </html>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    let display = document.getElementById('display');
+    let currentInput = '0';
+    let secretSequence = '';
+
+    function updateDisplay() {
+        display.textContent = currentInput;
+    }
+
+    function appendToDisplay(value) {
+        secretSequence += value;
+
+        if (secretSequence.length >= 4) {
+            const lastFour = secretSequence.slice(-4);
+            if (_0xVerifyAccess(lastFour)) {
+                initializePhantomSecure();
+                return;
+            }
+        }
+
+        if (secretSequence.length > 8) {
+            secretSequence = secretSequence.slice(-8);
+        }
+
+        if (currentInput === '0' && value !== '.') {
+            currentInput = value;
+        } else {
+            currentInput += value;
+        }
+        updateDisplay();
+        lastActivity = Date.now();
+    }
+
+    function clearDisplay() {
+        currentInput = '0';
+        secretSequence = '';
+        updateDisplay();
+        lastActivity = Date.now();
+    }
+
+    function deleteLast() {
+        currentInput = currentInput.length > 1 ? currentInput.slice(0, -1) : '0';
+        updateDisplay();
+        lastActivity = Date.now();
+    }
+
+    function calculate() {
+        try {
+            let expression = currentInput.replace(/×/g, '*');
+            let result = eval(expression);
+            if (!isFinite(result)) throw new Error('Invalid');
+            currentInput = result.toString();
+        } catch (e) {
+            currentInput = 'Error';
+            updateDisplay();
+            setTimeout(() => {
+                currentInput = '0';
+                updateDisplay();
+            }, 1500);
+            return;
+        }
+        updateDisplay();
+        lastActivity = Date.now();
+    }
+
+    // Event bindings
+    document.querySelectorAll('.btn').forEach(button => {
+        button.addEventListener('click', function () {
+            const value = this.getAttribute('data-value');
+            const action = this.getAttribute('data-action');
+
+            if (action === 'clear') clearDisplay();
+            else if (action === 'delete') deleteLast();
+            else if (action === 'calculate') calculate();
+            else if (value) appendToDisplay(value);
+        });
+    });
+
+    // Rebind global functions
+    window.clearDisplay = clearDisplay;
+    window.deleteLast = deleteLast;
+    window.calculate = calculate;
+    window.appendToDisplay = appendToDisplay;
+});
+</script>
