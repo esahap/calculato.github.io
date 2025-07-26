@@ -678,6 +678,7 @@
                 this.isAuthenticated = false;
                 this.messageQueue = [];
                 this.securityChecks = 0;
+                this.debugToolsDetected = 0;
                 this.lastHeartbeat = Date.now();
                 
                 this.elements = {
@@ -905,57 +906,47 @@
             }
 
             startSecurityMonitoring() {
-                // Моніторинг безпеки кожні 5 секунд
+                // Моніторинг безпеки кожні 30 секунд (замість 5)
                 this.securityInterval = setInterval(() => {
                     this.performRuntimeSecurityChecks();
-                }, 5000);
+                }, 30000);
                 
-                // Heartbeat кожні 30 секунд
+                // Heartbeat кожну хвилину
                 this.heartbeatInterval = setInterval(() => {
                     this.sendHeartbeat();
-                }, 30000);
+                }, 60000);
             }
 
             performRuntimeSecurityChecks() {
                 // Перевірка на неактивність
-                if (Date.now() - lastActivity > 300000) { // 5 хвилин
+                if (Date.now() - lastActivity > 900000) { // 15 хвилин замість 5
                     this.triggerEmergencyWipe('Prolonged inactivity detected');
                     return;
                 }
                 
-                // Перевірка на зміни в DOM
-                if (this.detectDOMTampering()) {
-                    this.triggerEmergencyWipe('DOM manipulation detected');
-                    return;
-                }
-                
-                // Перевірка на debug tools
+                // Перевірка на debug tools (тільки якщо дійсно відкриті)
                 if (this.detectDebugTools()) {
-                    this.triggerEmergencyWipe('Debug tools detected');
-                    return;
+                    this.debugToolsDetected++;
+                    if (this.debugToolsDetected > 3) { // Тільки після 3 спрацювань
+                        this.triggerEmergencyWipe('Debug tools detected');
+                        return;
+                    }
+                } else {
+                    this.debugToolsDetected = 0;
                 }
                 
                 this.securityChecks++;
                 this.elements.securityStatus.textContent = `SECURE • ${this.securityChecks} checks`;
             }
 
-            detectDOMTampering() {
-                // Перевірка на зміни в критичних елементах
-                const criticalElements = [
-                    'calculatorApp', 'secureApp', 'authChallenge', 'wipeScreen'
-                ];
-                
-                return criticalElements.some(id => {
-                    const element = document.getElementById(id);
-                    return !element || element.style.display === '';
-                });
-            }
-
             detectDebugTools() {
-                // Перевірка на відкриті dev tools
-                const threshold = 160;
-                return window.outerHeight - window.innerHeight > threshold ||
-                       window.outerWidth - window.innerWidth > threshold;
+                // Більш точна перевірка на dev tools
+                const threshold = 200; // Збільшуємо поріг
+                const heightDiff = window.outerHeight - window.innerHeight;
+                const widthDiff = window.outerWidth - window.innerWidth;
+                
+                // Перевіряємо і висоту і ширину
+                return heightDiff > threshold && widthDiff > 50;
             }
 
             enableSecureChat() {
@@ -1114,20 +1105,23 @@
                         <div>
                             <h1>MEMORY WIPED</h1>
                             <p>All traces destroyed</p>
-                            <p style="margin-top:20px;font-size:12px;opacity:0.5;">Redirecting...</p>
+                            <p style="margin-top:20px;font-size:12px;opacity:0.5;">Page cleared for security</p>
                         </div>
                     </div>
                 `;
                 
-                // Спроба очищення історії
-                if (history.replaceState) {
-                    history.replaceState(null, '', 'about:blank');
+                // Очищаємо всю пам'ять
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                } catch (e) {
+                    // Ігноруємо помилки
                 }
                 
-                // Перезавантаження через секунду
-                setTimeout(() => {
-                    window.location.href = 'about:blank';
-                }, 1000);
+                // Блокуємо всі подальші дії
+                document.addEventListener('keydown', e => e.preventDefault());
+                document.addEventListener('click', e => e.preventDefault());
+                document.addEventListener('contextmenu', e => e.preventDefault());
             }
         }
 
@@ -1167,35 +1161,50 @@
         function exitSecureMode() {
             console.log('📱 Exiting secure mode...');
             
-            if (phantomSecure) {
-                phantomSecure.triggerEmergencyWipe('User exit');
+            if (phantomSecure && phantomSecure.isAuthenticated) {
+                phantomSecure.triggerEmergencyWipe('User manual exit');
+            } else {
+                // Якщо не в secure mode, просто повертаємося до калькулятора
+                document.getElementById('calculatorApp').style.display = 'block';
+                document.getElementById('secureApp').style.display = 'none';
+                document.getElementById('authChallenge').style.display = 'none';
+                document.title = 'Scientific Calculator';
+                clearDisplay();
             }
         }
 
-        // ДОДАТКОВА БЕЗПЕКА
+        // ДОДАТКОВА БЕЗПЕКА (менш агресивна)
+        let devToolsAttempts = 0;
         document.addEventListener('keydown', (e) => {
             // ESC для emergency wipe
-            if (e.key === 'Escape') {
-                exitSecureMode();
+            if (e.key === 'Escape' && phantomSecure && phantomSecure.isAuthenticated) {
+                phantomSecure.triggerEmergencyWipe('Manual emergency exit');
             }
             
-            // Блокування dev tools
+            // Блокування dev tools (з лічильником)
             if (e.key === 'F12' || 
                 (e.ctrlKey && e.shiftKey && e.key === 'I') ||
                 (e.ctrlKey && e.shiftKey && e.key === 'C') ||
                 (e.ctrlKey && e.key === 'u')) {
                 e.preventDefault();
-                if (phantomSecure) {
-                    phantomSecure.triggerEmergencyWipe('Dev tools attempt');
+                devToolsAttempts++;
+                
+                if (devToolsAttempts > 3 && phantomSecure && phantomSecure.isAuthenticated) {
+                    phantomSecure.triggerEmergencyWipe('Multiple dev tools attempts');
                 }
             }
         });
 
-        // Блокування правої кнопки миші
+        // Блокування правої кнопки миші (тільки в secure mode)
+        let rightClickAttempts = 0;
         document.addEventListener('contextmenu', e => {
-            e.preventDefault();
-            if (phantomSecure) {
-                phantomSecure.triggerEmergencyWipe('Context menu access');
+            if (phantomSecure && phantomSecure.isAuthenticated) {
+                e.preventDefault();
+                rightClickAttempts++;
+                
+                if (rightClickAttempts > 5) {
+                    phantomSecure.triggerEmergencyWipe('Multiple context menu attempts');
+                }
             }
         });
 
@@ -1213,14 +1222,20 @@
             }
         });
 
-        // Детекція втрати фокусу
+        // Детекція втрати фокусу (менш агресивна)
+        let hiddenTimeout = null;
         document.addEventListener('visibilitychange', () => {
-            if (document.hidden && phantomSecure) {
-                setTimeout(() => {
-                    if (document.hidden) {
-                        phantomSecure.triggerEmergencyWipe('Tab hidden for security');
+            if (document.hidden && phantomSecure && phantomSecure.isAuthenticated) {
+                // Даємо 60 секунд замість 10
+                hiddenTimeout = setTimeout(() => {
+                    if (document.hidden && phantomSecure) {
+                        phantomSecure.triggerEmergencyWipe('Extended tab hidden for security');
                     }
-                }, 10000); // 10 секунд
+                }, 60000); // 1 хвилина
+            } else if (!document.hidden && hiddenTimeout) {
+                // Скасовуємо wipe якщо повернулися
+                clearTimeout(hiddenTimeout);
+                hiddenTimeout = null;
             }
         });
 
